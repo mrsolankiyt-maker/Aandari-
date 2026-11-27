@@ -317,6 +317,31 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
   .aandari-subcategory:hover,.ap-shortcut:hover{transform:none;box-shadow:none}
 }
 
+/* Scroll reveal for AANDARI category and brand icons/cards */
+@keyframes aandariScrollIconIn{
+  0%{opacity:0;transform:translateY(13px) scale(.72) rotate(-8deg)}
+  65%{opacity:1;transform:translateY(-2px) scale(1.09) rotate(3deg)}
+  100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}
+}
+#view .aandari-home-category.reveal.is-visible .aandari-home-category-icon,
+#view .aandari-home-brand.reveal.is-visible .aandari-home-brand-icon,
+#view .aandari-all-brand.reveal.is-visible .aandari-all-brand-icon,
+#view .aandari-category-tile.reveal.is-visible .aandari-category-icon,
+#view .aandari-subcategory.reveal.is-visible .aandari-sub-icon{
+  animation:aandariScrollIconIn 620ms cubic-bezier(.2,.75,.25,1) both;
+}
+#view .aandari-home-category.reveal.is-visible .aandari-home-category-icon{animation-delay:90ms}
+#view .aandari-home-brand.reveal.is-visible .aandari-home-brand-icon,
+#view .aandari-all-brand.reveal.is-visible .aandari-all-brand-icon{animation-delay:110ms}
+#view .aandari-category-tile.reveal.is-visible .aandari-category-icon,
+#view .aandari-subcategory.reveal.is-visible .aandari-sub-icon{animation-delay:80ms}
+@media(prefers-reduced-motion:reduce){
+  #view .aandari-home-category.reveal.is-visible .aandari-home-category-icon,
+  #view .aandari-home-brand.reveal.is-visible .aandari-home-brand-icon,
+  #view .aandari-all-brand.reveal.is-visible .aandari-all-brand-icon,
+  #view .aandari-category-tile.reveal.is-visible .aandari-category-icon,
+  #view .aandari-subcategory.reveal.is-visible .aandari-sub-icon{animation:none}
+}
 /* AANDARI icon tap animation — works on touch cards, not only buttons */
 @keyframes aandariIconBounce{
   0%{transform:scale(1) rotate(0)}
@@ -475,7 +500,7 @@ function aandariRestoreNav(){const x=aandariNavStack.pop();if(!x)return;page=x.p
 window.addEventListener('popstate',e=>{if(aandariNavStack.length)aandariRestoreNav()});
 function openPage(p){if(p===page)return;aandariPushNav();page=p;render();window.scrollTo({top:0,behavior:"smooth"})}function toggleLang(){lang=lang==='en'?'hi':'en';save();render();document.getElementById('langBtn').textContent=lang==='hi'?'EN / हिं':'हिं / EN'}
 function productCard(p){let off=p.mrp>p.price?Math.round((1-p.price/p.mrp)*100):0;return `<article class="product premium-product"><button class="heart tap" aria-label="Add to wishlist" onclick="event.stopPropagation();toggleWish('${p.id}')">${wish.includes(p.id)?'❤️':'♡'}</button><div class="product-open" onclick="detail('${p.id}')"><div class="prodimg">${p.image?`<img src="${p.image}" loading="lazy" alt="${p.n}" style="max-width:100%;max-height:100%;object-fit:contain">`:p.emoji}</div><div class="prodinfo"><span class="tag">${p.cat}</span><div class="product-name">${p.n}</div><div class="small muted">${p.brand||'AANDARI selection'}</div><div class="row product-price-row"><span class="price">${money(p.price)}</span>${p.mrp>p.price?`<del class="small muted">${money(p.mrp)}</del>`:''}</div><div class="product-meta">${p.mrp>p.price?'<span class="discount-pill">'+off+'% OFF</span>':''}<span class="stock-label ${p.stock>0?'available':'unavailable'}">${p.stock>0?'In stock':'Out of stock'}</span></div></div></div><div class="product-actions"><button class="btn tap" onclick="addCart('${p.id}')">＋ Add to Cart</button><button class="pill tap" aria-label="Compare product" onclick="toggleCompare('${p.id}')">⇄</button></div></article>`}
-let aandariRevealObserver;function initAandariMotion(){const nodes=document.querySelectorAll('#view .cat,#view .product,#view .card,#view .stat,#view .hero,#view .sectionhead');if(!('IntersectionObserver' in window)){nodes.forEach(n=>n.classList.add('is-visible'));return}if(aandariRevealObserver)aandariRevealObserver.disconnect();aandariRevealObserver=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-visible');aandariRevealObserver.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -24px 0px'});nodes.forEach((n,i)=>{n.classList.add('reveal');n.style.transitionDelay=Math.min(i%6,5)*55+'ms';aandariRevealObserver.observe(n)})}
+let aandariRevealObserver;function initAandariMotion(){const nodes=document.querySelectorAll('#view .cat,#view .product,#view .card,#view .stat,#view .hero,#view .sectionhead,#view .aandari-home-category,#view .aandari-home-brand,#view .aandari-all-brand,#view .aandari-category-tile,#view .aandari-subcategory,#view .aandari-category-hero,#view .aandari-shop-brands');if(!('IntersectionObserver' in window)){nodes.forEach(n=>n.classList.add('is-visible'));return}if(aandariRevealObserver)aandariRevealObserver.disconnect();aandariRevealObserver=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-visible');aandariRevealObserver.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -24px 0px'});nodes.forEach((n,i)=>{n.classList.add('reveal');n.style.transitionDelay=Math.min(i%6,5)*55+'ms';aandariRevealObserver.observe(n)})}
 function render(){document.getElementById('side').innerHTML=nav.map(n=>`<button class="navbtn ${page===n[0]?'active':''}" onclick="openPage('${n[0]}')"><span>${n[1]}</span>${t(n[2])}</button>`).join('')+`<div class="notice" style="margin-top:22px">🚚 Local delivery + Pan India shipping<br><b>PIN code availability applies</b></div>`;document.getElementById('mobile').innerHTML=[nav[0],nav[1],['cart','🛒','Cart'],nav[3],nav[4]].map(n=>`<button class="mobile-tab ${page===n[0]?'active':''}" onclick="openPage('${n[0]}')"><span class="mobile-tab-icon">${n[1]}${n[0]==='cart'&&cart.reduce((a,c)=>a+c.qty,0)?'<i class="mobile-cart-badge">'+cart.reduce((a,c)=>a+c.qty,0)+'</i>':''}</span><small>${t(n[2])}</small></button>`).join('');document.getElementById('cartCount').textContent=cart.reduce((a,c)=>a+c.qty,0);document.getElementById('pinLabel').textContent=pin||'Set PIN Code';let v=document.getElementById('view');let pages={home, brands:brandPage, categories, wishlist: wishlistPage, orders:ordersPage, account,admin,cart:cartPage,delivery,checkout,compare:comparePage,offers,returns:returnsPage,reports:reportsPage,support,track:tracking,search:searchPage,rewards:rewardsPage};v.innerHTML=(aandariNavStack.length?'<div class="aandari-backbar"><button class="aandari-back-button" onclick="aandariGoBack()" aria-label="Go back"><span>‹</span> Back</button></div>':'')+(pages[page]||home)();requestAnimationFrame(initAandariMotion);if(page==='home')loadBrandOfferSlides();if(page==='admin'&&aandariAdmin)loadAdminBrandOffers()}
 const aandariBrands=[
 {name:"Asian Paints",short:"ASIAN",category:"Paint",color:"#D94335"},{name:"Jaquar",short:"JAQUAR",category:"Sanitary",color:"#252525"},{name:"Astral",short:"ASTRAL",category:"Plumbing",color:"#D52D35"},{name:"Havells",short:"HAVELLS",category:"Electrical",color:"#D52D35"},{name:"CERA",short:"CERA",category:"Sanitary",color:"#2874A8"},{name:"Greenply",short:"GREENPLY",category:"Plywood",color:"#31844B"},{name:"Bosch",short:"BOSCH",category:"Tools",color:"#D62828"},{name:"Supreme",short:"SUPREME",category:"Plumbing",color:"#2865A8"},
