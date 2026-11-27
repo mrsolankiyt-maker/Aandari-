@@ -221,6 +221,57 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .welcome-trust{gap:8px 14px;margin-top:13px}
 .welcome-note{line-height:1.5}
 @media(max-height:700px){.welcome-layout{padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(14px,env(safe-area-inset-bottom))}.welcome-middle{padding:13px 0 8px}.welcome-visual{height:65px}.welcome-orbit{width:60px;height:60px;font-size:27px}.welcome-card h1{font-size:clamp(34px,8vw,48px);margin:10px 0}.welcome-card p{font-size:12px;line-height:1.5;margin-bottom:8px}.welcome-auth{padding:11px}.welcome-phone-row input,.welcome-phone-row span{padding-top:10px;padding-bottom:10px}}
+
+/* AANDARI premium orange / black / white refresh */
+:root{--n:#111;--b:#242424;--o:#ff7a1a;--ink:#171717;--m:#737373;--line:#ececec;--bg:#fafafa}
+body{background:#fafafa;color:#171717}
+.top{background:#111!important;color:#fff!important;position:sticky;top:0;z-index:25;box-shadow:0 8px 28px #00000012}
+.brand span{color:#ff7a1a!important}
+.top button{background:#242424!important;color:#fff!important;border:1px solid #ffffff30!important;border-radius:12px!important}
+.top button:last-child{background:#ff7a1a!important;color:#111!important;border-color:#ff7a1a!important}
+.qc-searchbar{position:sticky;top:66px;z-index:24;background:#fff;padding:10px 14px;border-bottom:1px solid #eee;box-shadow:0 6px 18px #00000008}
+.qc-search-inner{border-radius:14px!important;background:#f7f7f7!important;border:1px solid #e7e7e7!important}
+.qc-search-inner input{background:transparent!important;color:#171717}
+.qc-search-inner button{background:#111!important;color:#fff!important;border-radius:10px!important}
+.hero{background:radial-gradient(circle at 88% 20%,#39302a 0,#1a1a1a 35%,#090909 100%)!important;border-radius:0 0 26px 26px;min-height:300px;padding:42px 22px}
+.hero .wrap>span{display:inline-block;color:#ff9a4d;background:#ff7a1a1c;border:1px solid #ff7a1a55;border-radius:30px;padding:7px 11px;font-size:10px;font-weight:900;letter-spacing:1.3px}
+.hero h1{color:#fff!important;letter-spacing:-2px}.hero p{color:#d2d2d2!important}
+.hero .cta,.cta{background:#ff7a1a!important;color:#171717!important;border-radius:12px!important;font-weight:900;box-shadow:0 10px 24px #ff7a1a30!important}
+.ad-carousel{padding:18px 16px 0}.ad-frame{border-radius:20px!important;overflow:hidden;box-shadow:0 12px 34px #00000012}
+.qc-chip{border-radius:30px!important;background:#fff!important;border:1px solid #eee!important;color:#444!important}
+.benefit{border-radius:16px!important;box-shadow:0 8px 25px #00000007}.benefit i{color:#ff7a1a}
+.head h2{color:#171717;letter-spacing:-.65px}
+.tier{border-radius:30px!important}.tier.active{background:#fff0e5!important;border-color:#ffc18f!important;color:#b84b00!important}
+.cat{border:1px solid #eee!important;border-radius:16px!important;background:#fff!important;box-shadow:0 7px 22px #00000008!important}
+.cat b{background:#fff0e5!important;color:#e9680a!important}
+.brand-chip{border-radius:13px!important;border:1px solid #eee!important;background:#fff!important}
+.brand-chip b{background:#111!important;color:#ff8a36!important;border-radius:10px!important}
+.product{border:1px solid #ededed!important;border-radius:17px!important;box-shadow:0 8px 24px #00000008!important;background:#fff!important}
+.visual{background:#f4f4f4!important}.price{color:#171717!important}
+.actions button,.tool button{background:#ff7a1a!important;color:#171717!important;border-radius:11px!important}
+.actions .alt{background:#f1f1f1!important;color:#333!important}
+.feature-card{border-radius:17px!important;border-color:#eee!important;box-shadow:0 8px 24px #00000007!important}
+.feature-card>span{background:#fff0e5!important;color:#e9680a!important}
+.foot{background:#111!important}
+#catalogueStatus{border-color:#ffd4b2!important;background:#fff7f0!important;color:#8a410b!important}
+button{cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+button:active{transform:scale(.97)}
+.aandari-bottom-nav{display:none}
+@media(max-width:700px){
+ body{padding-bottom:82px}
+ .top{top:0;padding:10px 13px;min-height:66px}
+ .qc-searchbar{top:66px;padding:9px 12px}
+ .hero{min-height:280px;padding:32px 19px}
+ .ad-carousel{padding:14px 12px 0}
+ .main{padding:0 12px}
+ .cats{gap:8px}.products{gap:9px}
+ .aandari-bottom-nav{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);left:10px;right:10px;bottom:9px;z-index:60;background:#111;color:#fff;border:1px solid #333;border-radius:19px;padding:8px 5px calc(8px + env(safe-area-inset-bottom));box-shadow:0 12px 36px #0005}
+ .aandari-bottom-nav button{background:transparent;border:0;color:#cfcfcf;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:700;padding:3px 1px}
+ .aandari-bottom-nav button span{font-size:19px;line-height:1.1}
+ .aandari-bottom-nav button.active{color:#ff8a36}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
 </style></head><body>
 <div class="welcome-screen" id="welcomeScreen" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle"><div class="welcome-layout"><div class="welcome-top"><div class="welcome-mark">aandari<span>••</span></div><span class="welcome-kicker">WELCOME TO AANDARI</span></div><div class="welcome-middle welcome-card"><div class="welcome-kicker">A smarter way to build</div><h1 id="welcomeTitle">Har project.<br><em>Ek bharosa.</em></h1><p>Hardware se lekar home essentials tak — apne har idea ko haqeeqat banayein, AANDARI ke saath.</p><div class="welcome-visual"><div class="welcome-orbit">🛠️</div><div class="welcome-visual-copy"><b>Everything you need.</b>Hardware · Sanitaryware<br>Plumbing · Plywood · More</div></div></div><div class="welcome-bottom"><div class="welcome-auth"><label for="welcomePhone">MOBILE NUMBER</label><div class="welcome-phone-row"><span>+91</span><input id="welcomePhone" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="Enter 10-digit number"></div><button id="welcomeSendButton" class="welcome-cta" onclick="sendWelcomeOtp()">Continue with OTP <span aria-hidden="true">→</span></button><div id="welcomeOtpStep" class="welcome-otp-step" hidden><label for="welcomeOtp">ENTER 6-DIGIT OTP</label><input id="welcomeOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit OTP"><button class="welcome-verify" onclick="verifyWelcomeOtp()">Verify & sign in</button></div><p id="welcomeStatus" class="welcome-status" aria-live="polite"></p></div><button class="welcome-guest" onclick="continueAsGuest()">Continue as guest</button><div class="welcome-trust"><span>● Curated essentials</span><span>● Easy shopping</span><span>● Built for every project</span></div><small class="welcome-note">Sign in to save addresses and track orders. Guest users can explore freely.</small></div></div></div>
 
@@ -444,7 +495,7 @@ function printInstallationGuide(){
  if(detailIndex===null)return;
  const p=products[detailIndex],d=demoProductDetails(detailIndex),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const w=window.open('','_blank');if(!w){toast('Allow pop-ups to create your PDF');return;}
- w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(p[0])+' - AANDARI Installation Guide</title><style>body{font:15px Arial,sans-serif;color:#171717;max-width:760px;margin:36px auto;padding:0 22px}header{border-bottom:4px solid #f07818;padding-bottom:14px;margin-bottom:24px}.logo{font-size:25px;font-weight:900;letter-spacing:2px}.logo span{color:#f07818}h1{font-size:23px}h2{font-size:16px;margin-top:26px}.muted{color:#666;font-size:12px}.specs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.spec{border:1px solid #ddd;border-radius:8px;padding:10px}.spec b{display:block;font-size:12px;color:#777;margin-bottom:5px}li{margin:12px 0;line-height:1.55}.note{background:#fff4e8;padding:12px;border-radius:8px;font-size:12px;line-height:1.5}@media print{body{margin:15mm auto}.noprint{display:none}}</style></head><body><header><div class="logo">AANDARI<span>••</span></div><div class="muted">HARDWARE • SANITARYWARE • PLYWOOD</div></header><h1>'+esc(p[0])+'</h1><p class="muted">Category: '+esc(p[1])+' · SKU: '+esc(d.sku)+'</p><h2>Product specifications</h2><div class="specs">'+[['Brand',d.brand],['Material',d.material],['Finish / colour',d.finish],['Size / dimensions',d.size],['Selling unit',d.unit],['Installation tools',d.tools]].map(x=>'<div class="spec"><b>'+esc(x[0])+'</b>'+esc(x[1])+'</div>').join('')+'</div><h2>Installation steps</h2><ol>'+d.guide.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol><h2>Care instructions</h2><p>'+esc(d.care)+'</p><p class="note">Demo guide only. Specifications and instructions are illustrative, not verified manufacturer data. Always follow the exact product manual, label, safety requirements and approved installation instructions.</p><p class="muted">Generated from AANDARI product catalogue preview.</p><button class="noprint" onclick="window.print()">Print / Save as PDF</button><script>window.onload=()=>setTimeout(()=>window.print(),350)<\/script></body></html>');w.document.close();
+ w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(p[0])+' - AANDARI Installation Guide</title><style>body{font:15px Arial,sans-serif;color:#171717;max-width:760px;margin:36px auto;padding:0 22px}header{border-bottom:4px solid #f07818;padding-bottom:14px;margin-bottom:24px}.logo{font-size:25px;font-weight:900;letter-spacing:2px}.logo span{color:#f07818}h1{font-size:23px}h2{font-size:16px;margin-top:26px}.muted{color:#666;font-size:12px}.specs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.spec{border:1px solid #ddd;border-radius:8px;padding:10px}.spec b{display:block;font-size:12px;color:#777;margin-bottom:5px}li{margin:12px 0;line-height:1.55}.note{background:#fff4e8;padding:12px;border-radius:8px;font-size:12px;line-height:1.5}@media print{body{margin:15mm auto}.noprint{display:none}}</style></head><body><header><div class="logo">AANDARI<span>••</span></div><div class="muted">HARDWARE • SANITARYWARE • PLYWOOD</div></header><h1>'+esc(p[0])+'</h1><p class="muted">Category: '+esc(p[1])+' · SKU: '+esc(d.sku)+'</p><h2>Product specifications</h2><div class="specs">'+[['Brand',d.brand],['Material',d.material],['Finish / colour',d.finish],['Size / dimensions',d.size],['Selling unit',d.unit],['Installation tools',d.tools]].map(x=>'<div class="spec"><b>'+esc(x[0])+'</b>'+esc(x[1])+'</div>').join('')+'</div><h2>Installation steps</h2><ol>'+d.guide.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol><h2>Care instructions</h2><p>'+esc(d.care)+'</p><p class="note">Demo guide only. Specifications and instructions are illustrative, not verified manufacturer data. Always follow the exact product manual, label, safety requirements and approved installation instructions.</p><p class="muted">Generated from AANDARI product catalogue preview.</p><button class="noprint" onclick="window.print()">Print / Save as PDF</button><script>window.onload=()=>setTimeout(()=>window.print(),350)<\/script><nav class="aandari-bottom-nav" aria-label="Quick navigation"><button class="active" onclick="window.scrollTo({top:0,behavior:'smooth'})"><span>⌂</span>Home</button><button onclick="document.querySelector('.cats').scrollIntoView({behavior:'smooth',block:'start'})"><span>▦</span>Categories</button><button onclick="showFeature('wishlist')"><span>♡</span>Wishlist</button><button onclick="openCart()"><span>🛒</span>Cart</button><button onclick="showFeature('account')"><span>♙</span>Account</button></nav></body></html>');w.document.close();
 }
 
 function openProduct(i){detailIndex=i;const p=products[i],idx=['Customer','Carpenter','Contractor'].indexOf(tier),visual=document.getElementById('detailVisual');visual.innerHTML='<img id="detailProductImage" src="'+productPhotos[i%productPhotos.length]+'" alt="'+p[0]+'"><button class="spin-preview" onclick="rotateProductImage()">360° preview · demo</button>';const img=document.getElementById('detailProductImage');img.onerror=()=>{img.style.display='none'};document.getElementById('detailCategory').textContent=p[1];document.getElementById('detailName').textContent=p[0];document.getElementById('detailPrice').textContent='₹'+p[3+idx].toLocaleString('en-IN');document.getElementById('detailDescription').textContent=p[0]+' for your home, renovation and project needs. Explore product details and confirm specifications, brand and stock with AANDARI before ordering.';document.getElementById('detailSpecCategory').textContent=p[1];document.getElementById('detailTier').textContent=tier;renderProductDetails(i);document.getElementById('detailOverlay').classList.add('open');document.body.style.overflow='hidden';if(window.lucide)lucide.createIcons()}
