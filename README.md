@@ -34,3 +34,17 @@ The browser contains only the Supabase publishable key. Never put a Supabase sec
 ## Current authentication status
 
 The sign-in form now calls Supabase Phone OTP. It will only send SMS after Phone provider and an SMS delivery provider have been configured in the Supabase project. Product cards and pricing on the storefront are still sample/demo data; live catalogue, secure tier-based price display, checkout and order management are not connected yet.
+
+
+## Production commerce database migration
+
+The customer commerce schema is in `supabase/production_commerce.sql`. Apply it **after** `supabase/schema.sql` in the Supabase SQL Editor (or through the connected Supabase integration). It creates customer-owned addresses, wishlist, quotations, orders and order items, with Row Level Security. The order RPC calculates the signed-in customer's price tier and validates/decrements stock on the server; it does not trust browser-submitted prices.
+
+Important launch requirements still needing configuration:
+- Load the real sellable catalogue, verified product images/specifications, SKU-wise stock and all three approved price lists.
+- Configure and test the SMS provider for phone OTP.
+- Connect a payment gateway and verified server-side payment webhooks before accepting prepaid orders. Until then, UPI/card choices must remain unavailable for live payment.
+- Configure delivery serviceability, shipping rates, cancellation/return handling and customer support contact details.
+- Complete admin tools, legal policies, security testing and end-to-end test orders before public launch.
+
+The current demo catalogue and local-only demo orders are not real inventory or store-confirmed purchases.
