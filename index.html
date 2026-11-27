@@ -462,8 +462,14 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
   function revealAandariEntry(){
     var splash=document.getElementById('splash');
     if(splash)splash.classList.add('hide');
-    var auth=document.getElementById('aandariAuthScreen');
-    if(auth)auth.classList.add('show');
+    if(typeof window.aandariEnterGuest==='function'){
+      window.aandariEnterGuest();
+    }else{
+      var auth=document.getElementById('aandariAuthScreen');
+      if(auth)auth.classList.remove('show');
+      var app=document.querySelector('.app');
+      if(app)app.classList.add('aandari-unlocked');
+    }
   }
   window.addEventListener('error',function(){setTimeout(revealAandariEntry,0)});
   window.addEventListener('unhandledrejection',function(){setTimeout(revealAandariEntry,0)});
@@ -737,8 +743,8 @@ async function aandariSendCustomerOtp(){const phone=document.getElementById('aan
 async function aandariVerifyCustomerOtp(){const token=document.getElementById('aandariPhoneOtp').value.trim();try{const r=await fetch(AANDARI_SUPABASE_URL+'/auth/v1/verify',{method:'POST',headers:{apikey:AANDARI_SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({phone:aandariCustomerOtpPhone,token,type:'sms'})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.msg||j.message||j.error_description||'OTP verification failed');localStorage.setItem('aandari_customer_session',JSON.stringify(j));aandariUnlockStore()}catch(e){aandariAuthMessage(e.message||'OTP verification failed.')}}
 function aandariUnlockStore(){document.getElementById('aandariAuthScreen').classList.remove('show');document.querySelector('.app')?.classList.add('aandari-unlocked')}
 function aandariEnterGuest(){localStorage.setItem('aandari_guest_mode','1');aandariUnlockStore()}
-// After the existing splash animation, show login before the shopping home screen.
-const aandariOriginalBoot=setTimeout(()=>{const splash=document.getElementById('splash');if(splash)splash.classList.add('hide');const app=document.querySelector('.app');if(app)app.classList.remove('aandari-unlocked');const auth=document.getElementById('aandariAuthScreen');if(auth)auth.classList.add('show');},1950);
+// Login is not enabled for this preview: enter the store in guest mode after the splash.
+const aandariOriginalBoot=setTimeout(()=>{if(typeof aandariEnterGuest==='function'){aandariEnterGuest()}else{const splash=document.getElementById('splash');if(splash)splash.classList.add('hide');document.querySelector('.app')?.classList.add('aandari-unlocked')}},1950);
 
 
 function aandariBaseName(p){return String(p.n||'').replace(/\\s+\\d{1,3}(?:\\.\\d+)?\\s*(?:"|in(?:ch)?s?)?$/i,'').trim().toLowerCase()}
