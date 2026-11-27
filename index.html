@@ -273,9 +273,9 @@ function openAuth(){document.getElementById('authbox').classList.add('open');}
 function closeAuth(){document.getElementById('authbox').classList.remove('open');}
 function authMsg(s){document.getElementById('authstatus').textContent=s;}
 async function sendOtp(){const phone=document.getElementById('phone').value.trim();if(!/^\+[1-9]\d{7,14}$/.test(phone)){authMsg('Please enter phone with country code, e.g. +919876543210');return;}authMsg('Sending OTP…');const {error}=await sb.auth.signInWithOtp({phone});if(error){authMsg(error.message);return;}document.getElementById('otpstep').style.display='block';authMsg('OTP sent. Check your SMS.');}
-async function verifyOtp(){const phone=document.getElementById('phone').value.trim(),token=document.getElementById('otp').value.trim();if(!/^\d{6}$/.test(token)){authMsg('Enter the 6-digit OTP.');return;}authMsg('Verifying…');const {data,error}=await sb.auth.verifyOtp({phone,token,type:'sms'});if(error){authMsg(error.message);return;}currentUser=data.user;authMsg('Signed in successfully!');document.querySelector('.top button').textContent='My account';setTimeout(closeAuth,900);}
-sb.auth.getSession().then(({data})=>{if(data.session){currentUser=data.session.user;document.querySelector('.top button').textContent='My account';}});
-sb.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;});
+async function verifyOtp(){const phone=document.getElementById('phone').value.trim(),token=document.getElementById('otp').value.trim();if(!/^\d{6}$/.test(token)){authMsg('Enter the 6-digit OTP.');return;}authMsg('Verifying…');const {data,error}=await sb.auth.verifyOtp({phone,token,type:'sms'});if(error){authMsg(error.message);return;}currentUser=data.user;authMsg('Signed in successfully! Syncing your account…');document.querySelector('.top button').textContent='My account';loadCustomerCloudData();setTimeout(closeAuth,900);}
+sb.auth.getSession().then(({data})=>{if(data.session){currentUser=data.session.user;document.querySelector('.top button').textContent='My account';loadCustomerCloudData();}});
+sb.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser){document.querySelector('.top button').textContent='My account';setTimeout(()=>loadCustomerCloudData(),0)}else{document.querySelector('.top button').textContent='Sign in';}});
 const products=[
 ['Premium Door Handle','Door Handles','🚪',899,699,599],['Chrome Basin Mixer','Bath Fittings','🚿',2499,2199,1999],['PVC Plumbing Pipe','Plumbing','🧰',320,285,260],['Wall Paint 4L','Paint','🎨',1299,1199,1099],['Power Drill 650W','Tools','🔧',3299,2999,2799],['Ceramic Wash Basin','Sanitaryware','🚰',3899,3599,3299],['Waterproof Plywood','Plywood','🪵',2450,2290,2150],['Stainless Steel Hinges','Hinges','🔩',180,155,140],
 ['Mortise Door Lock Set','Door Locks','🔐',1899,1699,1499],['Soft Close Drawer Channel','Drawer Channels','🗄️',1150,990,890],['Cabinet Handle Pair','Cabinet Fittings','🧰',260,220,195],['Self Drilling Screw Pack','Screws & Fasteners','🔩',180,155,135],['Tile & Stone Adhesive 20kg','Adhesives','🪣',520,485,450],['Adjustable Spanner Set','Tools','🔧',799,699,625],['CPVC Elbow Fitting','Plumbing','🔧',65,58,52],['Bathroom Towel Rod','Bath Fittings','🛁',950,850,775],['LED Bulb 12W','Electrical','💡',160,140,125],['Modular Switch 6A','Switches','🔌',125,110,98],['Copper Wire 1.5mm','Electrical','🧵',1850,1720,1600],['PVC Ball Valve','Pipes & Fittings','🚰',220,195,175],['UPVC Pipe 1 inch','Pipes & Fittings','🧰',410,375,345],['Kitchen Sink Mixer','Kitchen Fittings','🚿',2850,2590,2390],['Soft Close Cabinet Hinge','Cabinet Fittings','🔩',320,285,255],['Door Stopper SS','Door Accessories','🚪',145,125,110],['Digital Door Lock','Door Locks','🔐',8990,8490,7990],['Safety Helmet','Safety','⛑️',450,410,375],['Work Gloves Pair','Safety','🧤',120,105,95],['Waterproofing Chemical 1L','Waterproofing','🪣',390,355,325],['Shower Head','Bath Accessories','🚿',650,590,540],['Angle Cock','Bath Fittings','🚰',780,710,650],['Wall Mixer','Bath Fittings','🚿',3250,2990,2750],['Flush Tank','Sanitaryware','🚽',1850,1690,1550],['Laminate Sheet','Plywood','🪵',1450,1350,1250],['MDF Board 8mm','Plywood','🪵',1250,1150,1050],['Circular Saw 7 inch','Tools','🪚',5490,5100,4750],['Measuring Tape 5m','Tools','📏',180,160,145],['Paint Roller Set','Paint','🖌️',280,250,225],['Exterior Emulsion 10L','Paint','🎨',3650,3390,3150],['PVC Solvent Cement','Adhesives','🧴',180,160,145],['Tower Bolt SS','Door Accessories','🔒',260,235,210],['Drawer Knob','Cabinet Fittings','⚙️',95,82,72],['Pillar Tap','Bath Fittings','🚰',950,870,790],['Wire Connector Pack','Electrical','🔌',90,78,68],['Concealed Cistern','Sanitaryware','🚽',4650,4290,3990],['Wood Adhesive 1kg','Adhesives','🪣',260,235,215],['Plywood Screw Box','Screws & Fasteners','🔩',320,290,265],['CPVC Pipe 1/2 inch','Plumbing','🧰',280,255,235]];
@@ -402,7 +402,19 @@ let wishlist=[],compareList=[],priceAlerts=[],lastOrder=[];
 try{wishlist=JSON.parse(localStorage.getItem('aandari_wishlist')||'[]');compareList=JSON.parse(localStorage.getItem('aandari_compare')||'[]');priceAlerts=JSON.parse(localStorage.getItem('aandari_price_alerts')||'[]');lastOrder=JSON.parse(localStorage.getItem('aandari_repeat_order')||'[]')}catch(e){wishlist=[];compareList=[];priceAlerts=[];lastOrder=[]}
 function saveLocalLists(){try{localStorage.setItem('aandari_wishlist',JSON.stringify(wishlist));localStorage.setItem('aandari_compare',JSON.stringify(compareList));localStorage.setItem('aandari_price_alerts',JSON.stringify(priceAlerts))}catch(e){toast('Could not save on this device')}}
 function syncFeatureCounts(){document.getElementById('wishCount').textContent=wishlist.length+' saved';document.getElementById('compareCount').textContent=compareList.length+' selected'}
-function toggleWish(i){wishlist=wishlist.includes(i)?wishlist.filter(x=>x!==i):[...wishlist,i];saveLocalLists();syncFeatureCounts();toast(wishlist.includes(i)?'Added to wishlist':'Removed from wishlist')}
+async function toggleWish(i){
+ const adding=!wishlist.includes(i);
+ wishlist=adding?[...wishlist,i]:wishlist.filter(x=>x!==i);
+ saveLocalLists();syncFeatureCounts();
+ if(currentUser&&catalogueRows[i]){
+  const row=catalogueRows[i];
+  const result=adding
+   ?await sb.from('wishlist_items').upsert({user_id:currentUser.id,product_id:row.id},{onConflict:'user_id,product_id'})
+   :await sb.from('wishlist_items').delete().eq('user_id',currentUser.id).eq('product_id',row.id);
+  if(result.error)toast('Saved on this device; cloud sync failed: '+result.error.message);
+  else toast(adding?'Saved to your AANDARI account':'Removed from your AANDARI account');
+ }else toast(adding?'Added to wishlist on this device':'Removed from wishlist');
+}
 function toggleCompare(i){if(compareList.includes(i))compareList=compareList.filter(x=>x!==i);else if(compareList.length<3)compareList.push(i);else{toast('Compare up to 3 products');return}saveLocalLists();syncFeatureCounts();toast(compareList.includes(i)?'Added to comparison':'Removed from comparison')}
 function closeFeature(){document.getElementById('featureModal').classList.remove('open');document.body.style.overflow=''}
 function showFeature(which){const box=document.getElementById('featureContent');let html='';
@@ -438,6 +450,44 @@ function findNearbyStock(){const pin=document.getElementById('nearbyPin').value.
 let aandariProfile={}, aandariAddresses=[], aandariProjects=[];
 try{aandariProfile=JSON.parse(localStorage.getItem('aandari_profile')||'{}');aandariAddresses=JSON.parse(localStorage.getItem('aandari_addresses')||'[]');aandariProjects=JSON.parse(localStorage.getItem('aandari_projects')||'[]')}catch(e){aandariProfile={};aandariAddresses=[];aandariProjects=[]}
 function persistAccount(){try{localStorage.setItem('aandari_profile',JSON.stringify(aandariProfile));localStorage.setItem('aandari_addresses',JSON.stringify(aandariAddresses));localStorage.setItem('aandari_projects',JSON.stringify(aandariProjects))}catch(e){toast('Could not save account details on this device')}}
+async function loadCustomerCloudData(){
+ if(!currentUser)return;
+ const uid=currentUser.id;
+ try{
+  const [profileResult,addressResult,wishResult]=await Promise.all([
+   sb.from('profiles').select('id,phone,display_name,role,email,business_name,gstin,role_requested').eq('id',uid).maybeSingle(),
+   sb.from('customer_addresses').select('id,recipient_name,phone,address_line,landmark,city,state,pincode,is_default,created_at').eq('user_id',uid).order('created_at',{ascending:false}),
+   sb.from('wishlist_items').select('product_id').eq('user_id',uid)
+  ]);
+  if(profileResult.error)throw profileResult.error;
+  if(addressResult.error)throw addressResult.error;
+  if(wishResult.error)throw wishResult.error;
+  if(profileResult.data){
+   const p=profileResult.data;
+   aandariProfile={...aandariProfile,name:p.display_name||aandariProfile.name||'',email:p.email||currentUser.email||'',business:p.business_name||'',gst:p.gstin||'',customerType:p.role_requested? p.role_requested.charAt(0).toUpperCase()+p.role_requested.slice(1):(p.role||'customer').charAt(0).toUpperCase()+(p.role||'customer').slice(1)};
+   persistAccount();
+  }
+  aandariAddresses=(addressResult.data||[]).map(a=>({id:a.id,name:a.recipient_name,phone:a.phone,line:a.address_line,landmark:a.landmark||'',city:a.city,state:a.state,pincode:a.pincode}));
+  persistAccount();
+  window.aandariCloudWishlistIds=(wishResult.data||[]).map(x=>x.product_id);
+  applyCloudWishlistToLocal();
+  if(document.getElementById('featureContent')?.innerHTML.includes('AANDARI • MY ACCOUNT'))showFeature('account');
+ }catch(error){console.error('AANDARI account sync failed',error);toast('Account loaded, but some details could not sync: '+error.message)}
+}
+async function applyCloudWishlistToLocal(){
+ if(!currentUser||!Array.isArray(catalogueRows)||!catalogueRows.length)return;
+ const ids=window.aandariCloudWishlistIds||[];
+ const cloudIndices=catalogueRows.map((r,i)=>ids.includes(r.id)?i:-1).filter(i=>i>=0);
+ const localValid=wishlist.filter(i=>catalogueRows[i]&&!catalogueRows[i].is_demo===false);
+ const merged=[...new Set([...cloudIndices,...localValid])];
+ const missing=merged.filter(i=>!ids.includes(catalogueRows[i].id));
+ if(missing.length){
+  const rows=missing.map(i=>({user_id:currentUser.id,product_id:catalogueRows[i].id}));
+  const {error}=await sb.from('wishlist_items').upsert(rows,{onConflict:'user_id,product_id'});
+  if(error)console.warn('Wishlist migration from this device failed',error.message);
+ }
+ wishlist=merged;saveLocalLists();syncFeatureCounts();
+}
 function accountPanel(title,body){document.getElementById('featureContent').innerHTML='<button class="soft" onclick="showFeature(\'account\')">← My Account</button><h2>'+title+'</h2>'+body}
 function renderAccount(){
  const name=aandariProfile.name||'Welcome to AANDARI', signed=!!currentUser;
@@ -458,14 +508,49 @@ function renderAccount(){
  '<button class="account-tile" onclick="accountSupport()"><span>💬</span><b>Help & Support</b><small>Get assistance</small></button>'+
  '</div><div class="account-section"><h3>My Profile</h3><p class="account-muted">Keep your contact and business details updated.</p><button class="account-primary" onclick="accountEditProfile()">Edit profile</button> <span class="account-pill">'+escapeHtml(aandariProfile.customerType||'Customer')+'</span></div>'+
  (signed?'<button class="account-primary" style="background:#222;color:#fff" onclick="accountLogout()">Sign out</button>':'')+
- '<p class="account-muted">Carpenter / Contractor pricing requires store approval. Profile, address and project demo data is saved on this device until backend sync is enabled.</p>';
+ '<p class="account-muted">Carpenter / Contractor pricing requires store approval. Profile, saved addresses and wishlist sync to your account when signed in. Projects remain saved on this device.</p>';
 }
-function accountOrders(){let orders=[];try{orders=JSON.parse(localStorage.getItem('aandari_orders')||'[]')}catch(e){}accountPanel('📦 My Orders',orders.length?'<div class="account-section">'+orders.slice().reverse().map(o=>'<div class="account-order"><div><b>'+escapeHtml(o.id)+'</b><span class="account-pill">'+escapeHtml(o.status)+'</span></div><small>'+escapeHtml(o.date)+' · '+o.items.length+' item(s)</small><strong>₹'+Number(o.total).toLocaleString('en-IN')+'</strong><button class="account-primary" onclick="trackLocalOrder(\''+o.id+'\')">Track order</button></div>').join('')+'</div>':'<div class="account-section"><h3>No orders yet</h3><p class="account-muted">Your demo checkout orders will appear here on this device. Live store order processing will be enabled with backend integration.</p><button class="account-primary" onclick="closeFeature();document.getElementById(\'products\').scrollIntoView({behavior:\'smooth\'})">Explore products</button></div>')}
-function accountAddresses(){accountPanel('📍 Saved Addresses','<div class="account-section"><h3>Add delivery address</h3><label class="account-field">Name</label><input id="addrName" placeholder="Full name"><label class="account-field">Mobile number</label><input id="addrPhone" inputmode="tel" placeholder="+91..."><label class="account-field">House / Street / Area</label><textarea id="addrLine" placeholder="Complete address"></textarea><label class="account-field">City & PIN code</label><input id="addrCity" placeholder="Bengaluru, 560001"><button class="account-primary" onclick="saveAccountAddress()">Save address</button></div><div class="account-section">'+(aandariAddresses.length?aandariAddresses.map((a,i)=>'<div class="account-action"><span><b>'+escapeHtml(a.name)+'</b><br><small>'+escapeHtml(a.line)+' · '+escapeHtml(a.city)+'</small></span><button onclick="deleteAccountAddress('+i+')">Remove</button></div>').join(''):'<p class="account-muted">No saved addresses yet.</p>')+'</div>')}
-function saveAccountAddress(){const a={name:document.getElementById('addrName').value.trim(),phone:document.getElementById('addrPhone').value.trim(),line:document.getElementById('addrLine').value.trim(),city:document.getElementById('addrCity').value.trim()};if(!a.name||!a.line||!a.city){toast('Please fill name, address and city');return}aandariAddresses.push(a);persistAccount();accountAddresses();toast('Address saved on this device')}
-function deleteAccountAddress(i){aandariAddresses.splice(i,1);persistAccount();accountAddresses()}
+async function accountOrders(){
+ if(currentUser){
+  accountPanel('📦 My Orders','<div class="account-section"><p class="account-muted">Loading your secure order history…</p></div>');
+  const {data,error}=await sb.from('customer_orders').select('id,order_number,status,payment_method,payment_status,total,created_at,customer_order_items(product_name,quantity,line_total)').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+  if(error){accountPanel('📦 My Orders','<div class="account-section"><p class="account-muted">Could not load your orders: '+escapeHtml(error.message)+'</p></div>');return}
+  accountPanel('📦 My Orders',data&&data.length?'<div class="account-section">'+data.map(o=>'<div class="account-order"><div><b>'+escapeHtml(o.order_number)+'</b><span class="account-pill">'+escapeHtml(o.status)+'</span></div><small>'+new Date(o.created_at).toLocaleString('en-IN')+' · '+(o.customer_order_items||[]).length+' item(s)</small><strong>₹'+Number(o.total).toLocaleString('en-IN')+'</strong><small>Payment: '+escapeHtml(o.payment_method)+' · '+escapeHtml(o.payment_status)+'</small><div class="account-muted">'+(o.customer_order_items||[]).map(x=>escapeHtml(x.product_name)+' × '+x.quantity).join('<br>')+'</div></div>').join('')+'</div>':'<div class="account-section"><h3>No live orders yet</h3><p class="account-muted">Orders placed after live checkout is enabled will appear here across your devices.</p><button class="account-primary" onclick="closeFeature();document.getElementById(\'products\').scrollIntoView({behavior:\'smooth\'})">Explore products</button></div>');
+  return;
+ }
+ let orders=[];try{orders=JSON.parse(localStorage.getItem('aandari_orders')||'[]')}catch(e){}
+ accountPanel('📦 My Orders',orders.length?'<div class="account-section">'+orders.slice().reverse().map(o=>'<div class="account-order"><div><b>'+escapeHtml(o.id)+'</b><span class="account-pill">'+escapeHtml(o.status)+'</span></div><small>'+escapeHtml(o.date)+' · '+o.items.length+' item(s)</small><strong>₹'+Number(o.total).toLocaleString('en-IN')+'</strong><button class="account-primary" onclick="trackLocalOrder(\''+o.id+'\')">Track order</button></div>').join('')+'</div>':'<div class="account-section"><h3>No orders yet</h3><p class="account-muted">Sign in to view orders across your devices. Demo orders are saved only on this device.</p></div>');
+}
+function accountAddresses(){
+ accountPanel('📍 Saved Addresses','<div class="account-section"><h3>Add delivery address</h3><label class="account-field">Recipient name</label><input id="addrName" placeholder="Full name"><label class="account-field">Mobile number</label><input id="addrPhone" inputmode="tel" placeholder="+91..."><label class="account-field">House / Street / Area</label><textarea id="addrLine" placeholder="Complete address"></textarea><label class="account-field">Landmark (optional)</label><input id="addrLandmark" placeholder="Nearby landmark"><div class="checkout-grid"><div><label class="account-field">City</label><input id="addrCity" placeholder="Bengaluru"></div><div><label class="account-field">State</label><input id="addrState" placeholder="Karnataka"></div></div><label class="account-field">6-digit PIN code</label><input id="addrPin" inputmode="numeric" maxlength="6" placeholder="560001"><button class="account-primary" onclick="saveAccountAddress()">Save address</button><p class="account-muted">Saved addresses sync to your account when signed in.</p></div><div class="account-section">'+(aandariAddresses.length?aandariAddresses.map((a,i)=>'<div class="account-action"><span><b>'+escapeHtml(a.name)+'</b><br><small>'+escapeHtml(a.line)+' · '+escapeHtml(a.city||'')+' '+escapeHtml(a.pincode||'')+'</small></span><button onclick="deleteAccountAddress('+i+')">Remove</button></div>').join(''):'<p class="account-muted">No saved addresses yet.</p>')+'</div>');
+}
+async function saveAccountAddress(){
+ const a={name:document.getElementById('addrName').value.trim(),phone:document.getElementById('addrPhone').value.trim(),line:document.getElementById('addrLine').value.trim(),landmark:document.getElementById('addrLandmark').value.trim(),city:document.getElementById('addrCity').value.trim(),state:document.getElementById('addrState').value.trim(),pincode:document.getElementById('addrPin').value.trim()};
+ if(!a.name||!a.phone||!a.line||!a.city||!a.state||!/^\d{6}$/.test(a.pincode)){toast('Please complete the address and valid 6-digit PIN');return}
+ if(currentUser){
+  const {data,error}=await sb.from('customer_addresses').insert({user_id:currentUser.id,recipient_name:a.name,phone:a.phone,address_line:a.line,landmark:a.landmark||null,city:a.city,state:a.state,pincode:a.pincode}).select().single();
+  if(error){toast('Address could not sync: '+error.message);return}
+  a.id=data.id;
+ }
+ aandariAddresses.push(a);persistAccount();accountAddresses();toast(currentUser?'Address saved to your AANDARI account':'Address saved on this device. Sign in to sync it.');
+}
+async function deleteAccountAddress(i){
+ const a=aandariAddresses[i];
+ if(currentUser&&a?.id){const {error}=await sb.from('customer_addresses').delete().eq('id',a.id).eq('user_id',currentUser.id);if(error){toast('Could not remove address: '+error.message);return}}
+ aandariAddresses.splice(i,1);persistAccount();accountAddresses();
+}
 function accountEditProfile(){accountPanel('☺ My Profile','<div class="account-section"><label class="account-field">Full name</label><input id="profileName" value="'+escapeHtml(aandariProfile.name||'')+'" placeholder="Your name"><label class="account-field">Email address</label><input id="profileEmail" type="email" value="'+escapeHtml(aandariProfile.email||currentUser?.email||'')+'" placeholder="name@example.com"><label class="account-field">Business / Shop name (optional)</label><input id="profileBusiness" value="'+escapeHtml(aandariProfile.business||'')+'" placeholder="Business name"><label class="account-field">Customer type</label><select id="profileType"><option>Customer</option><option>Carpenter</option><option>Contractor</option></select><p class="account-muted">Carpenter and Contractor benefits/pricing remain pending until AANDARI verifies your request.</p><label class="account-field">GSTIN (optional, future-ready)</label><input id="profileGst" value="'+escapeHtml(aandariProfile.gst||'')+'" placeholder="GSTIN (if applicable)"><button class="account-primary" onclick="saveAccountProfile()">Save profile</button></div>');document.getElementById('profileType').value=aandariProfile.customerType||'Customer'}
-function saveAccountProfile(){aandariProfile={...aandariProfile,name:document.getElementById('profileName').value.trim(),email:document.getElementById('profileEmail').value.trim(),business:document.getElementById('profileBusiness').value.trim(),customerType:document.getElementById('profileType').value,gst:document.getElementById('profileGst').value.trim()};persistAccount();showFeature('account');toast('Profile saved on this device')}
+async function saveAccountProfile(){
+ aandariProfile={...aandariProfile,name:document.getElementById('profileName').value.trim(),email:document.getElementById('profileEmail').value.trim(),business:document.getElementById('profileBusiness').value.trim(),customerType:document.getElementById('profileType').value,gst:document.getElementById('profileGst').value.trim()};
+ persistAccount();
+ if(currentUser){
+  const requested=String(aandariProfile.customerType||'Customer').toLowerCase();
+  const {error}=await sb.from('profiles').update({display_name:aandariProfile.name,email:aandariProfile.email||null,business_name:aandariProfile.business||null,gstin:aandariProfile.gst||null,role_requested:['carpenter','contractor'].includes(requested)?requested:'customer'}).eq('id',currentUser.id);
+  if(error){toast('Saved on this device; cloud profile sync failed: '+error.message);showFeature('account');return}
+  toast('Profile saved to your AANDARI account. Special pricing remains pending approval.');
+ }else toast('Profile saved on this device. Sign in to sync it.');
+ showFeature('account');
+}
 function accountProjects(){accountPanel('🏗️ My Projects','<div class="account-section"><label class="account-field">Project name</label><input id="projectName" placeholder="e.g. Home renovation"><label class="account-field">Site location</label><input id="projectLocation" placeholder="Area / city"><label class="account-field">Notes / material list</label><textarea id="projectNotes" placeholder="Pipes, plywood, paint, fittings..."></textarea><button class="account-primary" onclick="saveAccountProject()">Save project</button></div><div class="account-section">'+(aandariProjects.length?aandariProjects.map((p,i)=>'<div class="account-action"><span><b>'+escapeHtml(p.name)+'</b><br><small>'+escapeHtml(p.location)+' · '+escapeHtml(p.notes)+'</small></span><button onclick="deleteAccountProject('+i+')">Delete</button></div>').join(''):'<p class="account-muted">Create your first project material list.</p>')+'</div>')}
 function saveAccountProject(){const p={name:document.getElementById('projectName').value.trim(),location:document.getElementById('projectLocation').value.trim(),notes:document.getElementById('projectNotes').value.trim()};if(!p.name){toast('Enter a project name');return}aandariProjects.push(p);persistAccount();accountProjects();toast('Project saved on this device')}
 function deleteAccountProject(i){aandariProjects.splice(i,1);persistAccount();accountProjects()}
@@ -530,7 +615,7 @@ async function loadSupabaseCatalogue(){
   products.splice(0,products.length,...data.map(r=>[r.name,r.category,emoji[r.category]||'🧰',Number(r.price_customer||0),Number(r.price_carpenter||0),Number(r.price_contractor||0)]));
   productBrands.splice(0,productBrands.length,...data.map(r=>r.brand||'AANDARI Select'));
   status.innerHTML='✓ Connected to AANDARI database · '+data.length+' products loaded · Demo items are preview only';
-  drawBrandFilters();render();updateCartUI();
+  drawBrandFilters();render();updateCartUI();if(currentUser)applyCloudWishlistToLocal();
  }catch(error){
   status.textContent='Database connection issue: '+(error.message||'Unable to load catalogue')+'. Showing safe local preview.';
   console.error('AANDARI catalogue load failed',error);
