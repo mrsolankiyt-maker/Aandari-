@@ -478,3 +478,12 @@ create policy "Users can read own profile" on public.profiles
 
 revoke all on function public.handle_new_user() from public, anon, authenticated;
 revoke all on function public.rls_auto_enable() from public, anon, authenticated;
+
+-- Account self-service permissions. Keep privileged role fields server-controlled.
+drop policy if exists "Users update own profile fields" on public.profiles;
+create policy "Users update own profile fields"
+  on public.profiles for update to authenticated
+  using ((select auth.uid()) = id)
+  with check ((select auth.uid()) = id);
+
+grant update on public.wishlist_items to authenticated;
