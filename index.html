@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101d3a"><link rel="manifest" href="/manifest.webmanifest"><title>AANDARI | Hardware & Home Essentials</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#111111"><link rel="manifest" href="/manifest.webmanifest"><title>AANDARI | Hardware & Home Essentials</title>
 <style>
 :root{--n:#101d3a;--b:#194eaa;--o:#f28a25;--ink:#18243b;--m:#68748a;--line:#e8edf4;--bg:#f5f7fb}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Arial}.top{background:var(--n);color:white;padding:14px max(18px,calc((100% - 1160px)/2));display:flex;justify-content:space-between;align-items:center}.brand{font-size:25px;font-weight:900;letter-spacing:-1px}.brand span{color:var(--o)}.tag{font-size:9px;letter-spacing:2px;color:#d9e2f3}.top button,.tier,.cat,.actions button,.tool button{border-radius:9px;padding:9px 13px;border:1px solid #ffffff55;background:transparent;color:inherit}.hero{background:linear-gradient(115deg,#101d3a,#194eaa);color:white;padding:38px 20px}.wrap{max-width:1160px;margin:auto}.hero h1{font-size:clamp(32px,5vw,48px);line-height:1.08;margin:12px 0}.hero p{color:#dce7fb;max-width:560px}.cta{background:var(--o);border:0;border-radius:9px;padding:12px 18px;font-weight:800}.search{display:flex;gap:8px;max-width:620px;margin-top:18px}.search input{flex:1;min-width:0;padding:13px;border:0;border-radius:9px}.search button{border:0;border-radius:9px;padding:0 14px;font-weight:700}.main{max-width:1160px;margin:24px auto;padding:0 16px}.head{display:flex;justify-content:space-between;align-items:center;margin:25px 0 13px}.head h2{margin:0;font-size:22px}.muted,.small{color:var(--m);font-size:12px}.tiers{display:flex;gap:8px;flex-wrap:wrap}.tier{border:1px solid var(--line);background:white;color:var(--m);border-radius:22px}.tier.active{background:#eaf1ff;color:var(--b);border-color:#bfd1f4;font-weight:800}.cats{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}.cat{background:white;border:1px solid var(--line);color:var(--ink);font-weight:700}.cat b{display:block;font-size:24px;margin-bottom:5px}.products{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.product,.tool{background:white;border:1px solid var(--line);border-radius:13px;overflow:hidden}.visual{height:130px;display:grid;place-items:center;background:linear-gradient(145deg,#edf2fb,#fafbfd);font-size:46px}.body{padding:13px}.body h3{font-size:15px;margin:4px 0}.price{font-size:19px;font-weight:900;color:var(--n);margin:8px 0}.actions{display:flex;gap:7px;margin-top:10px}.actions button,.tool button{background:var(--b);color:white;border:0;font-weight:700}.actions .alt{background:#edf2fb;color:var(--b)}.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.tool{padding:16px}.tool h3{margin:0 0 6px}.foot{margin-top:35px;background:var(--n);color:#dce5f5;text-align:center;padding:28px}.drawer{position:fixed;inset:0;background:#101d3a88;display:none;justify-content:flex-end}.drawer.open{display:flex}.panel{background:white;width:min(420px,94vw);padding:22px}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--n);color:white;padding:11px 17px;border-radius:9px;display:none}
 @media(max-width:800px){.cats{grid-template-columns:repeat(4,1fr)}.products{grid-template-columns:repeat(2,1fr)}.tools{grid-template-columns:1fr 1fr}}@media(max-width:430px){.top{padding:12px}.products{gap:9px}.visual{height:110px}.tools{grid-template-columns:1fr}}
@@ -67,6 +67,37 @@ button:active{transform:scale(.96)}
 .qc-modal{position:fixed;inset:0;z-index:60;background:#07142c88;display:none;align-items:flex-end;justify-content:center}.qc-modal.open{display:flex}.qc-modal section{background:#fff;border-radius:22px 22px 0 0;padding:22px;width:min(560px,100%);animation:sheetIn .25s ease}.qc-modal input{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;margin:12px 0}.qc-modal button.primary{background:var(--qc-green);color:white;border:0;border-radius:10px;padding:12px 16px;font-weight:800}.qc-modal .close{float:right;border:0;background:#eef2f6;border-radius:50%;width:34px;height:34px}
 .drawer{z-index:55}.panel{overflow:auto;max-height:100vh}.cart-line{display:grid;grid-template-columns:1fr auto;gap:8px;padding:13px 0;border-bottom:1px solid var(--line)}.cart-line b{font-size:13px}.cart-line small{color:var(--m)}.cart-line .qc-stepper{min-width:94px}.qc-total{display:flex;justify-content:space-between;font-weight:900;font-size:18px;padding:16px 0}.benefitstrip{display:none}
 @media(min-width:800px){.products{grid-template-columns:repeat(4,minmax(0,1fr))}.hero{max-width:1160px;margin:12px auto 0}.qc-promise{max-width:1190px;margin:auto}.main{max-width:1160px;margin:10px auto}.cats{grid-template-columns:repeat(7,1fr)}}
+
+/* AANDARI orange / black / white brand theme */
+:root{--n:#111111;--b:#f07818;--o:#f07818;--ink:#171717;--m:#6b6b6b;--line:#ece7e2;--bg:#ffffff;--qc-green:#f07818}
+body{background:#fff;color:#171717}
+.top{background:#111!important;color:#fff!important}
+.top .brand{color:#111!important}
+.brand span{color:#f07818!important}
+.tag{color:#777!important}
+.hero{background:linear-gradient(112deg,#111 0%,#24201c 68%,#3a2517 100%)!important;color:#fff}
+.hero .cta,.cta{background:#f07818!important;color:#111!important}
+.tier.active{background:#fff0e3!important;color:#d85f00!important;border-color:#f07818!important}
+.cat b{background:#fff0e3!important;color:#e96c0b!important}
+.visual .visual-icon{color:#e96c0b!important}
+.actions button,.tool button,.authcard button,.feature-dialog .primary,.detail-actions button,.qc-modal button.primary{background:#f07818!important;color:#111!important}
+.actions .alt,.authcard .secondary,.detail-actions .secondary,.feature-dialog .soft,.feature-x,.feature-row button,.detail-close{background:#fff0e3!important;color:#b84e00!important}
+.price,.detail-price{color:#111!important}
+.qc-add{color:#d85f00!important;border-color:#f2b27d!important;background:#fff!important}
+.qc-stepper,.qc-cartbar{background:#f07818!important;color:#111!important}
+.qc-stepper button,.qc-cartbar button{color:#111!important}
+.qc-bottomnav button.active,.qc-search-inner button{color:#e96c0b!important}
+.qc-location strong{color:#111!important}
+.qc-search-inner{background:#fff;border-color:#e6ded7}
+.qc-promise .qc-chip{color:#333}
+.foot,.toast{background:#111!important;color:#fff!important}
+.drawer{background:#111a}
+.authbox,.detail-overlay,.feature-modal,.qc-modal{background:#111b}
+.feature-card>span{background:#fff0e3!important;color:#e96c0b!important}
+.detail-visual{background:radial-gradient(circle at 50% 40%,#fff 0,#fff3e8 65%,#f8dfc8 100%)!important;color:#e96c0b!important}
+.detail-spec{background:#fffaf6}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #f07818;outline-offset:2px}
+
 </style></head><body>
 <header class="top"><div><div class="brand">aandari<span>••</span></div><div class="qc-location" onclick="openPin()">⌖ Deliver to <strong id="deliverTo">Bengaluru</strong> · <u>Change</u></div></div><div><button onclick="openCart()">🛒 Cart <b id="count">0</b></button></div></header><div class="qc-searchbar"><div class="qc-search-inner"><span>⌕</span><input id="q" placeholder="Search pipes, tools, paint, brands..." oninput="render()"><button onclick="voice()">🎙</button></div></div>
 <section class="hero"><div class="wrap"><span>YOUR TRUSTED HARDWARE MARKETPLACE</span><h1>Build better.<br>Live better.</h1><p>Everything your project needs, in one place. Discover trusted hardware, sanitaryware, tools and more.</p><button class="cta" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">Explore products ↓</button></div></section>
