@@ -346,7 +346,7 @@ async function confirmPhoneOtp(inputId,otpId,statusId,successCallback){
   if(error)throw error;
   currentUser=data.user;
   document.getElementById('headerAccountButton').textContent='My account';
-  try{localStorage.setItem('aandari_welcome_seen','1');localStorage.removeItem('aandari_guest_mode');}catch(e){}
+  try{localStorage.setItem('aandari_welcome_seen','1');localStorage.setItem('aandari_welcome_seen_v2','1');localStorage.removeItem('aandari_guest_mode');}catch(e){}
   loadCustomerCloudData();
   status.textContent='Login successful!';
   if(successCallback)successCallback();
@@ -357,10 +357,10 @@ function verifyWelcomeOtp(){confirmPhoneOtp('welcomePhone','welcomeOtp','welcome
 function sendOtp(){requestPhoneOtp('phone','otpstep','authstatus',null);}
 function verifyOtp(){confirmPhoneOtp('phone','otp','authstatus',()=>setTimeout(closeAuth,500));}
 function continueAsGuest(){
- try{localStorage.setItem('aandari_welcome_seen','1');localStorage.setItem('aandari_guest_mode','1');}catch(e){}
+ try{localStorage.setItem('aandari_welcome_seen','1');localStorage.setItem('aandari_welcome_seen_v2','1');localStorage.setItem('aandari_guest_mode','1');}catch(e){}
  closeWelcome();
 }
-sb.auth.getSession().then(({data})=>{if(data.session){currentUser=data.session.user;document.getElementById('headerAccountButton').textContent='My account';loadCustomerCloudData();}});
+sb.auth.getSession().then(({data})=>{if(data.session){currentUser=data.session.user;document.getElementById('headerAccountButton').textContent='My account';loadCustomerCloudData();closeWelcome();}else{showWelcomeIfFirstVisit();}}).catch(()=>showWelcomeIfFirstVisit());
 sb.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser){document.getElementById('headerAccountButton').textContent='My account';setTimeout(()=>loadCustomerCloudData(),0)}else{document.getElementById('headerAccountButton').textContent='Sign in';}});
 const products=[
 ['Premium Door Handle','Door Handles','🚪',899,699,599],['Chrome Basin Mixer','Bath Fittings','🚿',2499,2199,1999],['PVC Plumbing Pipe','Plumbing','🧰',320,285,260],['Wall Paint 4L','Paint','🎨',1299,1199,1099],['Power Drill 650W','Tools','🔧',3299,2999,2799],['Ceramic Wash Basin','Sanitaryware','🚰',3899,3599,3299],['Waterproof Plywood','Plywood','🪵',2450,2290,2150],['Stainless Steel Hinges','Hinges','🔩',180,155,140],
@@ -684,8 +684,8 @@ renderAds();
 const adBox=document.getElementById('brandAdCarousel');if(adBox){adBox.addEventListener('mouseenter',()=>clearInterval(adTimer));adBox.addEventListener('mouseleave',startAdAutoplay);adBox.addEventListener('touchstart',()=>clearInterval(adTimer),{passive:true});adBox.addEventListener('touchend',startAdAutoplay,{passive:true});}
 
 
-function closeWelcome(){const el=document.getElementById('welcomeScreen');if(el)el.classList.remove('show');try{localStorage.setItem('aandari_welcome_seen','1');if(!currentUser)localStorage.setItem('aandari_guest_mode','1')}catch(e){}}
-function showWelcomeIfFirstVisit(){let seen=false;try{seen=localStorage.getItem('aandari_welcome_seen')==='1'}catch(e){}if(!seen){const el=document.getElementById('welcomeScreen');if(el)el.classList.add('show')}}
+function closeWelcome(){const el=document.getElementById('welcomeScreen');if(el)el.classList.remove('show');try{localStorage.setItem('aandari_welcome_seen','1');localStorage.setItem('aandari_welcome_seen_v2','1');if(!currentUser)localStorage.setItem('aandari_guest_mode','1')}catch(e){}}
+function showWelcomeIfFirstVisit(){let seen=false;try{seen=localStorage.getItem('aandari_welcome_seen_v2')==='1'}catch(e){}if(!seen){const el=document.getElementById('welcomeScreen');if(el)el.classList.add('show')}}
 try{cart=JSON.parse(localStorage.getItem('aandari_cart')||'[]')}catch(e){cart=[]}
 let catalogueRows=[];
 function isDemoCatalogProduct(i){return !catalogueRows[i]||catalogueRows[i].is_demo===true}
@@ -708,5 +708,5 @@ async function loadSupabaseCatalogue(){
  }
 }
 syncFeatureCounts();
-drawBrandFilters();render();updateCartUI();loadSupabaseCatalogue();showWelcomeIfFirstVisit();if(window.lucide)lucide.createIcons();if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+drawBrandFilters();render();updateCartUI();loadSupabaseCatalogue();if(window.lucide)lucide.createIcons();if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 </script></body></html>
