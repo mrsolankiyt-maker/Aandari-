@@ -156,7 +156,7 @@ begin
   if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
     raise exception 'Your cart is empty';
   end if;
-  if p_payment_method not in ('cod','upi','card','netbanking') then
+  if p_payment_method is null or p_payment_method not in ('cod','upi','card','netbanking') then
     raise exception 'Invalid payment method';
   end if;
 
@@ -171,7 +171,84 @@ begin
   v_state := nullif(trim(p_address->>'state'),'');
   v_pin := nullif(trim(p_address->>'pincode'),'');
   v_landmark := nullif(trim(p_address->>'landmark'),'');
-  if v_name is null or v_phone is null or v_line is null or v_city is null or v_state is null or v_pin !~ '^[0-9]{6}$' then
+  if v_name is null or v_phone is null or v_line is null or v_city is null or v_state is null or v_pin is null or v_pin !~ '^[0-9]{6}
+    raise exception 'Please provide a complete delivery address and valid 6-digit PIN';
+  end if;
+
+  for v_item in select jsonb_build_object('product_id', product_id, 'quantity', sum(quantity)) as value
+    from (select (value->>'product_id')::uuid as product_id, (value->>'quantity')::integer as quantity from jsonb_array_elements(p_items)) q
+    group by product_id
+  loop
+    if (v_item->>'product_id') is null then raise exception 'Invalid product in cart'; end if;
+    v_qty := greatest(0, least(999, coalesce((v_item->>'quantity')::integer, 0)));
+    if v_qty < 1 then raise exception 'Invalid product quantity'; end if;
+    select * into v_product from public.products
+      where id = (v_item->>'product_id')::uuid and is_active = true
+      for update;
+    if not found then raise exception 'A product is unavailable'; end if;
+    if v_product.stock_quantity < v_qty then
+      raise exception 'Insufficient stock for %', v_product.name;
+    end if;
+    v_price := case v_role
+      when 'carpenter' then v_product.price_carpenter
+      when 'contractor' then v_product.price_contractor
+      else v_product.price_customer
+    end;
+    if v_price is null or v_price <= 0 then
+      raise exception 'Price is not configured for %', v_product.name;
+    end if;
+    v_subtotal := v_subtotal + (v_price * v_qty);
+  end loop;
+
+  v_shipping := case when v_subtotal >= 1999 then 0 else 99 end;
+  v_total := v_subtotal + v_shipping;
+  v_order_number := 'AAN-' || upper(substr(replace(gen_random_uuid()::text,'-',''),1,10));
+
+  insert into public.customer_orders (
+    order_number,user_id,payment_method,payment_status,subtotal,shipping_fee,total,price_tier,
+    recipient_name,recipient_phone,address_line,landmark,city,state,pincode,delivery_note
+  ) values (
+    v_order_number,v_user,p_payment_method,'pending',v_subtotal,v_shipping,v_total,v_role,
+    v_name,v_phone,v_line,v_landmark,v_city,v_state,v_pin,nullif(trim(p_delivery_note),'')
+  ) returning id into v_order_id;
+
+  for v_item in select value from jsonb_array_elements(p_items)
+  loop
+    v_qty := (v_item->>'quantity')::integer;
+    select * into v_product from public.products
+      where id = (v_item->>'product_id')::uuid and is_active = true
+      for update;
+    v_price := case v_role
+      when 'carpenter' then v_product.price_carpenter
+      when 'contractor' then v_product.price_contractor
+      else v_product.price_customer
+    end;
+    insert into public.customer_order_items (
+      order_id,product_id,product_name,sku,quantity,unit_price,line_total,selected_variant
+    ) values (
+      v_order_id,v_product.id,v_product.name,v_product.sku,v_qty,v_price,v_price*v_qty,
+      coalesce(v_item->'selected_variant','{}'::jsonb)
+    );
+  end loop;
+
+  update public.products p set stock_quantity = p.stock_quantity - grouped.quantity
+  from (select (value->>'product_id')::uuid as product_id, sum((value->>'quantity')::integer)::integer as quantity
+        from jsonb_array_elements(p_items) group by (value->>'product_id')::uuid) grouped
+  where p.id = grouped.product_id;
+
+  return jsonb_build_object(
+    'id',v_order_id,'order_number',v_order_number,'subtotal',v_subtotal,
+    'shipping_fee',v_shipping,'total',v_total,'payment_status','pending'
+  );
+end;
+$$;
+
+revoke all on function public.create_customer_order(jsonb,jsonb,text,text) from public;
+grant execute on function public.create_customer_order(jsonb,jsonb,text,text) to authenticated;
+
+-- The customer app cannot mark an order paid, change stock, change role, or set its own order status.
+-- Payment webhooks and admin status changes must be added as trusted server-side functions.
+ then
     raise exception 'Please provide a complete delivery address and valid 6-digit PIN';
   end if;
 
