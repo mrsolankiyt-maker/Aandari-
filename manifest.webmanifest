@@ -1,1 +1,10 @@
-{"name":"AANDARI Hardware Marketplace","short_name":"AANDARI","start_url":"/","display":"standalone","background_color":"#f5f7fb","theme_color":"#101d3a","description":"Hardware, Sanitaryware and Plywood marketplace"}
+{
+  "name": "AANDARI Hardware Marketplace",
+  "short_name": "AANDARI",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f47700",
+  "description": "Shop hardware, sanitaryware, plumbing, tools, paint and home solutions with AANDARI.",
+  "scope": "./"
+}
