@@ -90,7 +90,7 @@ async function adminRequest(path,options={}){if(!aandariSession?.access_token||!
 
 async function syncCatalog(){
   const status=document.getElementById('dbStatus');
-  const headers={apikey:AANDARI_SUPABASE_KEY,Authorization:'Bearer '+AANDARI_SUPABASE_KEY};
+  const headers={apikey:AANDARI_SUPABASE_KEY,Authorization:'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhrdmR5dXVqaGxpY3RzdG1mY2NmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3NTgxOTAsImV4cCI6MjExMTMzNDE5MH0.77JtDHpi_A3EsTSfUe_ryK3eVMDDbCpVnznpkMqHLF0'};
   try{
     const [catRes,prodRes]=await Promise.all([
       fetch(AANDARI_SUPABASE_URL+'/rest/v1/categories?select=name,icon,sort_order&is_active=eq.true&order=sort_order.asc',{headers}),
