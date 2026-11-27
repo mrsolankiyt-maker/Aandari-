@@ -415,7 +415,7 @@ const adBox=document.getElementById('brandAdCarousel');if(adBox){adBox.addEventL
 
 function closeWelcome(){const el=document.getElementById('welcomeScreen');if(el)el.classList.remove('show');try{localStorage.setItem('aandari_welcome_seen','1')}catch(e){}}
 function showWelcomeIfFirstVisit(){let seen=false;try{seen=localStorage.getItem('aandari_welcome_seen')==='1'}catch(e){}if(!seen){const el=document.getElementById('welcomeScreen');if(el)el.classList.add('show')}}
-\ntry{cart=JSON.parse(localStorage.getItem('aandari_cart')||'[]')}catch(e){cart=[]}
+try{cart=JSON.parse(localStorage.getItem('aandari_cart')||'[]')}catch(e){cart=[]}
 syncFeatureCounts();
 drawBrandFilters();render();updateCartUI();showWelcomeIfFirstVisit();if(window.lucide)lucide.createIcons();if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
 </script></body></html>
