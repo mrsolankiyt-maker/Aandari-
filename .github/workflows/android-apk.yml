@@ -1,11 +1,15 @@
-name: Build AANDARI Test APK
+name: Build AANDARI Android APK
 
 on:
   workflow_dispatch:
   push:
     branches: ["main"]
     paths:
+      - "index.html"
+      - "manifest.webmanifest"
+      - "sw.js"
       - "package.json"
+      - "package-lock.json"
       - "capacitor.config.json"
       - ".github/workflows/android-apk.yml"
 
@@ -16,36 +20,47 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
-      - name: Install Capacitor
+
+      - name: Install Capacitor dependencies
         run: npm install
-      - name: Prepare Capacitor web asset directory
+
+      - name: Bundle the real AANDARI storefront
         run: |
+          test -s index.html
           mkdir -p www
-          printf '<!doctype html><html><head><meta charset="utf-8"></head><body>AANDARI loads from its secure hosted storefront.</body></html>' > www/index.html
-      - name: Create Android project
+          cp index.html www/index.html
+          if [ -f manifest.webmanifest ]; then cp manifest.webmanifest www/manifest.webmanifest; fi
+          if [ -f sw.js ]; then cp sw.js www/sw.js; fi
+
+      - name: Add Android platform
         run: npx cap add android
-      - name: Sync Android project
+
+      - name: Sync bundled storefront into Android
         run: npx cap sync android
-      - name: Build debug APK
+
+      - name: Build installable debug APK
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
-      - name: Upload test APK
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AANDARI-Test-APK
+          name: AANDARI-Android-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
