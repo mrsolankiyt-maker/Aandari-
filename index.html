@@ -277,10 +277,21 @@ function renderProductDetails(i){
 }
 
 function renderVariantPicker(i){
- const p=products[i],sizes=['Standard','Small','Medium','Large','Custom size'],finishes=['Matte Black','Chrome','Satin','Brushed Nickel','White'];
+ const p=products[i],name=p[0],isPipe=/CPVC|UPVC|PVC.*Pipe|Pipe.*PVC/i.test(name),isPipeFitting=/CPVC.*(Elbow|Fitting)|PVC.*(Valve|Fitting)/i.test(name);
+ if(isPipe||isPipeFitting){
+  const sizes=isPipe?['15 mm (1/2 inch)','20 mm (3/4 inch)','25 mm (1 inch)','32 mm (1 1/4 inch)','40 mm (1 1/2 inch)','50 mm (2 inch)','63 mm (2 1/2 inch)']:['15 mm (1/2 inch)','20 mm (3/4 inch)','25 mm (1 inch)','32 mm (1 1/4 inch)','40 mm (1 1/2 inch)','50 mm (2 inch)'];
+  const lengths=isPipe?['3 metre','5 metre','6 metre']:[];
+  return '<section class="detail-info-block"><h3><span>◈</span> Choose pipe size & quantity</h3><div class="variant-pickers"><label>Pipe diameter / size<select id="variantSize" onchange="updateVariantChoice()">'+sizes.map((x,j)=>'<option'+((name.includes('1/2')&&j===0)?' selected':'')+'>'+x+'</option>').join('')+'</select></label>'+(isPipe?'<label>Pipe length<select id="variantLength" onchange="updateVariantChoice()">'+lengths.map(x=>'<option>'+x+'</option>').join('')+'</select></label>':'<label>Connection type<select id="variantLength" onchange="updateVariantChoice()"><option>Socket / solvent joint</option><option>Threaded (where applicable)</option></select></label>')+'</div><p id="variantChoice" class="detail-note">Selected: '+sizes[0]+(isPipe?' · '+lengths[0]:' · Socket / solvent joint')+'. Size-wise price and stock need supplier confirmation.</p></section>';
+ }
+ const sizes=['Standard','Small','Medium','Large','Custom size'],finishes=['Matte Black','Chrome','Satin','Brushed Nickel','White'];
  return '<section class="detail-info-block"><h3><span>◈</span> Choose size & finish</h3><div class="variant-pickers"><label>Size / variant<select id="variantSize" onchange="updateVariantChoice()">'+sizes.map(x=>'<option>'+x+'</option>').join('')+'</select></label><label>Finish / colour<select id="variantFinish" onchange="updateVariantChoice()">'+finishes.map(x=>'<option>'+x+'</option>').join('')+'</select></label></div><p id="variantChoice" class="detail-note">Selected: Standard · Matte Black. Variant availability and price need supplier confirmation.</p></section>';
 }
-function updateVariantChoice(){const a=document.getElementById('variantSize'),b=document.getElementById('variantFinish'),o=document.getElementById('variantChoice');if(a&&b&&o)o.textContent='Selected: '+a.value+' · '+b.value+'. Variant availability and price need supplier confirmation.'}
+function updateVariantChoice(){
+ const a=document.getElementById('variantSize'),b=document.getElementById('variantFinish'),l=document.getElementById('variantLength'),o=document.getElementById('variantChoice');
+ if(!a||!o)return;
+ const parts=['Selected: '+a.value];if(l)parts.push(l.value);if(b)parts.push(b.value);
+ o.textContent=parts.join(' · ')+'. Variant-wise availability and price need supplier confirmation.';
+}
 function renderFrequentlyBought(i){
  const p=products[i],related=products.map((x,j)=>({x,j})).filter(z=>z.j!==i&&(z.x[1]===p[1]||z.x[1]==='Screws & Fasteners')).slice(0,3);
  if(!related.length)return '';
