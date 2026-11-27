@@ -2,9 +2,5 @@
   "appId": "com.aandari.marketplace",
   "appName": "AANDARI",
   "webDir": "www",
-  "server": {
-    "url": "https://mrsolankiyt-maker.github.io/Aandari-/",
-    "cleartext": false,
-    "androidScheme": "https"
-  }
+  "bundledWebRuntime": false
 }
