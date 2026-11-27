@@ -18,3 +18,19 @@ Never trust a pricing tier or price sent by the browser. The backend must authen
 
 ## Run
 Open index.html in a browser or deploy as a static site. For PWA installation, serve over HTTPS.
+
+
+## Supabase setup (phone OTP + starter database)
+
+1. In Supabase, open **Authentication → Providers → Phone** and enable phone sign-in.
+2. Configure an SMS provider and its credentials in Supabase. SMS delivery is not enabled automatically by adding the frontend code; provider availability and charges depend on your provider/Supabase settings.
+3. Open **SQL Editor → New query**, paste the contents of `supabase/schema.sql`, and run it.
+4. In **Authentication → URL Configuration**, add the deployed GitHub Pages URL to the allowed site/redirect URLs:
+   `https://mrsolankiyt-maker.github.io`
+5. Open the deployed site and test with a phone number that your SMS provider can deliver to.
+
+The browser contains only the Supabase publishable key. Never put a Supabase secret/service-role key in this repository. The SQL enables Row Level Security: customers can read their own profile and the public active catalogue, but cannot change their role or product prices.
+
+## Current authentication status
+
+The sign-in form now calls Supabase Phone OTP. It will only send SMS after Phone provider and an SMS delivery provider have been configured in the Supabase project. Product cards and pricing on the storefront are still sample/demo data; live catalogue, secure tier-based price display, checkout and order management are not connected yet.
