@@ -1,0 +1,17 @@
+{
+  "name": "aandari-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AANDARI Android wrapper for the customer marketplace",
+  "scripts": {
+    "android:prepare": "cap add android",
+    "android:sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3"
+  }
+}
