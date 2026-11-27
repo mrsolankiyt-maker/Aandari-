@@ -648,11 +648,26 @@ function renderDetail(p){
  <div class="aandari-product-actions"><button class="btn" onclick="addCart('${p.id}');closeProductQuickView()">＋ Add to Cart</button><button class="pill" onclick="toggleWish('${p.id}');this.textContent=wish.includes('${p.id}')?'♥ Saved':'♡ Wishlist'">${wish.includes(p.id)?'♥ Saved':'♡ Wishlist'}</button></div>
  <div class="aandari-secondary-actions"><button class="pill" onclick="toggleCompare('${p.id}')">⇄ Compare</button><span>Secure shopping with AANDARI</span></div></div></div></section></div>`;
  document.getElementById('modal').innerHTML=html;document.body.classList.add('aandari-modal-open');window.aandariCurrentPhotos=photos;
- const sheet=document.querySelector('.aandari-product-sheet');
- if(sheet){
-  let startY=0,startX=0,startTop=0;
-  sheet.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;startY=e.touches[0].clientY;startX=e.touches[0].clientX;startTop=sheet.scrollTop},{passive:true});
-  sheet.addEventListener('touchend',e=>{if(!startY||!e.changedTouches.length)return;const dy=e.changedTouches[0].clientY-startY,dx=e.changedTouches[0].clientX-startX;if(dy>115&&Math.abs(dy)>Math.abs(dx)*1.35&&startTop<=4){closeProductQuickView()}startY=0},{passive:true});
+ const sheet=document.querySelector('.aandari-product-sheet'),backdrop=document.querySelector('.aandari-product-backdrop');
+ if(sheet&&backdrop){
+  let startY=0,startX=0,dragging=false;
+  sheet.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;startY=e.touches[0].clientY;startX=e.touches[0].clientX;dragging=sheet.scrollTop<=2;sheet.style.transition='none'},{passive:true});
+  sheet.addEventListener('touchmove',e=>{
+   if(!startY||!dragging||!e.touches.length)return;
+   const dy=e.touches[0].clientY-startY,dx=e.touches[0].clientX-startX;
+   if(dy>0&&Math.abs(dy)>Math.abs(dx)*1.15){e.preventDefault();sheet.style.transform='translateY('+Math.min(dy,420)+'px)';backdrop.style.background='rgba(13,18,25,'+Math.max(.12,.64-dy/650)+')';backdrop.style.backdropFilter='blur('+Math.max(0,9-dy/35)+'px)'}
+   else if(dy<0){dragging=false;sheet.style.transition='transform .28s cubic-bezier(.2,.8,.2,1)';sheet.style.transform='';backdrop.style.background='';backdrop.style.backdropFilter=''}
+  },{passive:false});
+  sheet.addEventListener('touchend',e=>{
+   if(!startY)return;const endY=e.changedTouches[0]?.clientY??startY,dy=Math.max(0,endY-startY),dx=Math.abs((e.changedTouches[0]?.clientX??startX)-startX);
+   sheet.style.transition='transform .28s cubic-bezier(.2,.8,.2,1)';
+   if(dragging&&dy>=Math.max(210,sheet.offsetHeight*.28)&&dy>dx*1.2){
+    sheet.style.transform='translateY(105vh)';backdrop.style.transition='background .22s ease,backdrop-filter .22s ease';backdrop.style.background='rgba(13,18,25,0)';backdrop.style.backdropFilter='blur(0px)';
+    setTimeout(()=>{if(document.querySelector('.aandari-product-sheet')===sheet)closeProductQuickView()},230);
+   }else{sheet.style.transform='';backdrop.style.background='';backdrop.style.backdropFilter=''}
+   startY=0;startX=0;dragging=false;
+  },{passive:true});
+  sheet.addEventListener('touchcancel',()=>{sheet.style.transition='transform .28s cubic-bezier(.2,.8,.2,1)';sheet.style.transform='';backdrop.style.background='';backdrop.style.backdropFilter='';startY=0;dragging=false},{passive:true});
  }
 }
 function aandariSelectPhoto(i){const photos=window.aandariCurrentPhotos||[];const img=document.querySelector('.aandari-main-photo img');if(img&&photos[i])img.src=photos[i];document.querySelectorAll('.aandari-thumbs button').forEach((b,j)=>b.classList.toggle('active',i===j));const count=document.querySelector('.aandari-photo-count');if(count)count.textContent=(i+1)+'/'+photos.length}
