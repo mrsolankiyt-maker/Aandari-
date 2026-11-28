@@ -515,7 +515,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
     if(!main||!form||!email||!phone||!field||!otp||!send){showAandariStartupFallback('Login form could not be initialized');return;}
     main.style.display='none';form.style.display='block';email.style.display='none';phone.style.display='block';if(submit)submit.style.display='none';if(sw)sw.style.display='none';if(err){err.style.display='none';err.textContent='';}
     if(title)title.textContent='Login with Mobile Number';if(sub)sub.textContent='Enter your 10-digit mobile number.';
-    field.value='';field.disabled=false;field.removeAttribute('readonly');otp.value='';otp.style.display='none';send.textContent='Send OTP';send.disabled=false;send.onclick=null;
+    field.value='';field.disabled=false;field.removeAttribute('readonly');otp.value='';otp.style.display='none';send.textContent='Send OTP';send.disabled=false;send.onclick=function(){aandariSendCustomerOtp();};
     setTimeout(function(){field.focus();},100);
   });}
   setTimeout(showAandariLogin,1400);
