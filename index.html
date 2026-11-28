@@ -966,47 +966,7 @@ async function moderateAandariReview(id,approve){try{if(approve){await adminRequ
 async function loadInvoiceSettings(){if(!aandariAdmin)return;try{const rows=await adminRequest('/rest/v1/store_invoice_settings?select=*&limit=1');const x=rows[0];if(!x)return;for(const [id,key] of [['invoiceLegalName','legal_name'],['invoiceGstin','gstin'],['invoiceAddress','address'],['invoiceStateCode','state_code'],['invoicePhone','phone'],['invoiceEmail','email']]){const el=document.getElementById(id);if(el)el.value=x[key]||''}}catch(e){console.warn('Invoice settings load failed',e)}}
 async function saveInvoiceSettings(){try{const row={id:true,legal_name:document.getElementById('invoiceLegalName').value.trim(),gstin:document.getElementById('invoiceGstin').value.trim().toUpperCase(),address:document.getElementById('invoiceAddress').value.trim(),state_code:document.getElementById('invoiceStateCode').value.trim(),phone:document.getElementById('invoicePhone').value.trim(),email:document.getElementById('invoiceEmail').value.trim(),updated_at:new Date().toISOString()};await adminRequest('/rest/v1/store_invoice_settings?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(row)});toast('Invoice business details saved')}catch(e){toast(e.message||'Could not save invoice settings')}}
 async function downloadAandariInvoice(orderId){const win=window.open('about:blank','_blank');if(!win)return toast('Allow pop-ups to print your invoice');try{const [or,ir,sr]=await Promise.all([fetch(AANDARI_SUPABASE_URL+'/rest/v1/customer_orders?select=*&id=eq.'+encodeURIComponent(orderId),{headers:aandariHeaders()}),fetch(AANDARI_SUPABASE_URL+'/rest/v1/customer_order_items?select=*&order_id=eq.'+encodeURIComponent(orderId),{headers:aandariHeaders()}),fetch(AANDARI_SUPABASE_URL+'/rest/v1/store_invoice_settings?select=*&limit=1',{headers:{apikey:AANDARI_SUPABASE_KEY}})]);const [orders,items,settings]=await Promise.all([or.json(),ir.json(),sr.json()]);if(!or.ok||!ir.ok)throw new Error('Invoice data unavailable');const o=orders[0],cfg=settings[0]||{};if(!o)throw new Error('Order not found');win.document.write('<html><head><title>AANDARI Order Invoice</title><style>body{font:14px Arial;padding:30px;color:#222}h1{color:#e87512}table{width:100%;border-collapse:collapse;margin-top:24px}td,th{padding:10px;border-bottom:1px solid #ddd;text-align:left}.right{text-align:right}.muted{color:#777}</style></head><body><h1>AANDARI</h1><h2>Order Invoice / Receipt</h2><p><b>'+(cfg.legal_name||'AANDARI')+'</b><br>'+(cfg.address||'')+'<br>GSTIN: '+(cfg.gstin||'Not configured')+'</p><hr><p><b>Order:</b> '+o.order_number+'<br><b>Date:</b> '+new Date(o.created_at).toLocaleString('en-IN')+'<br><b>Customer:</b> '+o.recipient_name+' · '+o.recipient_phone+'<br>'+o.address_line+', '+o.city+', '+o.state+' - '+o.pincode+'</p><table><tr><th>Item</th><th>Qty</th><th>Unit price</th><th class="right">Total</th></tr>'+items.map(x=>'<tr><td>'+aandariEscapeHtml(x.product_name)+'</td><td>'+x.quantity+'</td><td>'+money(Number(x.unit_price))+'</td><td class="right">'+money(Number(x.line_total))+'</td></tr>').join('')+'</table><p class="right">Subtotal: '+money(Number(o.subtotal))+'<br>Discount: '+money(Number(o.discount_amount||0))+'<br>Shipping: '+money(Number(o.shipping_fee))+'<br><b>Grand Total: '+money(Number(o.total))+'</b></p><p class="muted">Payment: '+o.payment_method.toUpperCase()+' · '+o.payment_status+'<br>GST tax breakup is not shown until tax rates and registration details are verified.</p><script>window.onload=()=>window.print()<\/script>
-<script>
-/* AANDARI OTP: capture the tap before any older inline handlers can replace it. */
-(function(){
-  if(window.__aandariOtpCaptureInstalled) return;
-  window.__aandariOtpCaptureInstalled = true;
-  document.addEventListener('click', function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest('#aandariSendOtpBtn') : null;
-    if(!btn) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    ev.stopImmediatePropagation();
-    var phone = document.getElementById('aandariPhone');
-    var otp = document.getElementById('aandariPhoneOtp');
-    var sub = document.getElementById('aandariAuthFormSub');
-    var err = document.getElementById('aandariAuthError');
-    function show(msg){ if(err){err.textContent=msg;err.style.display='block';} }
-    if(!phone || !otp){ show('Login form is not ready. Please refresh.'); return; }
-    if(btn.dataset.captureStep !== 'verify'){
-      var number = String(phone.value || '').replace(/\\D/g,'');
-      if(!/^[6-9]\\d{9}$/.test(number)){ show('Please enter a valid 10-digit Indian mobile number.'); phone.focus(); return; }
-      btn.dataset.capturePhone = number;
-      btn.dataset.captureStep = 'verify';
-      otp.style.setProperty('display','block','important');
-      otp.value = '';
-      otp.placeholder = 'Enter demo OTP 123456';
-      if(sub) sub.textContent = 'Enter the 6-digit demo OTP to continue.';
-      btn.textContent = 'Verify OTP';
-      show('TEST MODE: No SMS was sent. Enter 123456 to continue. Your number is not verified.');
-      otp.focus();
-      return;
-    }
-    if(String(otp.value || '').trim() !== '123456'){ show('Incorrect OTP. For testing, enter 123456.'); otp.focus(); return; }
-    localStorage.setItem('aandari_demo_customer', JSON.stringify({phone:'+91'+btn.dataset.capturePhone,mode:'demo',verified:false,created_at:new Date().toISOString()}));
-    localStorage.setItem('aandari_guest_mode','1');
-    localStorage.removeItem('aandari_auth_session');
-    localStorage.removeItem('aandari_customer_session');
-    if(typeof window.aandariUnlockStore === 'function') window.aandariUnlockStore();
-    else { var screen=document.getElementById('aandariAuthScreen'); if(screen) screen.classList.remove('show'); var app=document.querySelector('.app'); if(app) app.classList.add('aandari-unlocked'); }
-  }, true);
-})();
-</script>
+
 
 </body></html>');win.document.close()}catch(e){win.close();toast(e.message||'Invoice could not be generated')}}
 const aandariBaseLoadOrders=loadCustomerOrders;
