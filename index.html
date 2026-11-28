@@ -529,8 +529,29 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
   }
   function sendDemoOtp(ev){
     if(ev){ev.preventDefault();ev.stopPropagation();}
-    if(typeof window.aandariSendCustomerOtp==='function'){window.aandariSendCustomerOtp();}
-    else {var err=document.getElementById('aandariAuthError');if(err){err.textContent='OTP test function is loading. Please refresh.';err.style.display='block';}}
+    var phone=document.getElementById('aandariPhone');
+    var otp=document.getElementById('aandariPhoneOtp');
+    var btn=document.getElementById('aandariSendOtpBtn');
+    var sub=document.getElementById('aandariAuthFormSub');
+    var err=document.getElementById('aandariAuthError');
+    var number=String(phone&&phone.value||'').replace(/\\D/g,'');
+    if(!/^[6-9]\\d{9}$/.test(number)){if(err){err.textContent='Enter a valid 10-digit Indian mobile number.';err.style.display='block';}return;}
+    if(otp){otp.style.display='block';otp.value='';otp.focus();}
+    if(sub)sub.textContent='Demo mode: enter test OTP 123456 to continue.';
+    if(err){err.textContent='DEMO MODE ONLY — No SMS was sent. Test OTP: 123456. Your phone number is not verified.';err.style.display='block';}
+    if(btn){btn.textContent='Verify Demo OTP';btn.disabled=false;btn.onclick=verifyDemoOtp;}
+  }
+  function verifyDemoOtp(ev){
+    if(ev){ev.preventDefault();ev.stopPropagation();}
+    var otp=document.getElementById('aandariPhoneOtp');
+    var err=document.getElementById('aandariAuthError');
+    if(!otp||otp.value.trim()!=='123456'){if(err){err.textContent='Incorrect demo OTP. Enter 123456.';err.style.display='block';}return;}
+    var phone=document.getElementById('aandariPhone');
+    try{localStorage.setItem('aandari_demo_customer',JSON.stringify({phone:'+91'+String(phone.value||'').replace(/\\D/g,''),mode:'demo',verified:false,created_at:new Date().toISOString()}));localStorage.setItem('aandari_guest_mode','1');}catch(e){}
+    var auth=document.getElementById('aandariAuthScreen');
+    if(auth)auth.classList.remove('show');
+    var app=document.querySelector('.app');
+    if(app)app.classList.add('aandari-unlocked');
   }
   function returnToLogin(ev){
     if(ev){ev.preventDefault();ev.stopPropagation();}
