@@ -1111,8 +1111,29 @@ if(typeof aandariOldRender==='function'){
 }else{
   console.error('AANDARI profile extension skipped: storefront renderer is not available');
 }
-const aandariOldOpenPage=openPage;
-openPage=function(p){if(p==='ap-addresses'){page=p;document.getElementById('side').innerHTML=nav.map(n=>'<button class="navbtn" onclick="openPage(\''+n[0]+'\')"><span>'+n[1]+'</span>'+t(n[2])+'</button>').join('');document.getElementById('view').innerHTML=apAddressPage();document.getElementById('mobile').innerHTML='';window.scrollTo({top:0,behavior:'smooth'});return}if(p==='ap-notifications'){page=p;document.getElementById('view').innerHTML=apNotificationsPage();window.scrollTo({top:0,behavior:'smooth'});return}aandariOldOpenPage(p)};
+const aandariOldOpenPage=window.openPage||function(p){
+  if(p===page)return;
+  if(typeof aandariPushNav==='function')aandariPushNav();
+  page=p;
+  if(typeof render==='function')render();
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+window.openPage=function(p){
+  if(p==='ap-addresses'){
+    page=p;
+    const side=document.getElementById('side');
+    if(side&&Array.isArray(nav))side.innerHTML=nav.map(n=>'<button class="navbtn" onclick="openPage(\\''+n[0]+'\\')"><span>'+n[1]+'</span>'+t(n[2])+'</button>').join('');
+    const view=document.getElementById('view');if(view)view.innerHTML=apAddressPage();
+    const mobile=document.getElementById('mobile');if(mobile)mobile.innerHTML='';
+    window.scrollTo({top:0,behavior:'smooth'});return;
+  }
+  if(p==='ap-notifications'){
+    page=p;const view=document.getElementById('view');if(view)view.innerHTML=apNotificationsPage();
+    window.scrollTo({top:0,behavior:'smooth'});return;
+  }
+  aandariOldOpenPage(p);
+};
+
 </script>
 <script>
 /* Final, self-contained demo OTP handler: runs after all auth scripts. */
