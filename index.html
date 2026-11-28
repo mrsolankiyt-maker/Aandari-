@@ -467,7 +467,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
       <div class="aandari-auth-divider">OR CONTINUE WITH</div>
       <button class="aandari-auth-btn primary" onclick="aandariShowAuthMode('phone')">Get Started with Mobile Number</button>
       <button class="aandari-auth-btn dark" onclick="aandariShowAuthMode('email')">Login / Create Account with Email</button>
-      <button class="aandari-auth-skip" onclick="aandariEnterGuest()">Skip for now →</button>
+      <button class="aandari-auth-skip" onclick="aandariEnterGuest()">Continue as Guest</button>
       <p class="aandari-auth-foot">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
     </div>
     <div id="aandariAuthForm" style="display:none">
@@ -807,7 +807,7 @@ async function aandariSendCustomerOtp(){
     aandariCustomerOtpPhone=phone;
     document.getElementById('aandariPhoneOtp').style.display='block';
     document.getElementById('aandariAuthFormSub').textContent='Enter the 6-digit OTP received on '+phone+'.';
-    btn.textContent='Resend OTP';btn.disabled=false;btn.onclick=aandariSendCustomerOtp;
+    btn.textContent='Verify OTP';btn.disabled=false;btn.onclick=aandariVerifyCustomerOtp;
     aandariAuthMessage('OTP request accepted. If SMS authentication is configured on the free plan, check your messages.');
   }catch(e){
     btn.disabled=false;btn.textContent='Try OTP again';
@@ -828,7 +828,7 @@ async function aandariVerifyCustomerOtp(){
     await refreshAdminState();
     aandariUnlockStore();
     toast('Login successful.');
-  }catch(e){btn.disabled=false;btn.textContent='Resend OTP';aandariAuthMessage(e.message||'OTP verification failed.')}
+  }catch(e){btn.disabled=false;btn.textContent='Send OTP again';btn.onclick=aandariSendCustomerOtp;aandariAuthMessage(e.message||'OTP verification failed.')}
 }
 function aandariUnlockStore(){document.getElementById('aandariAuthScreen').classList.remove('show');document.querySelector('.app')?.classList.add('aandari-unlocked')}
 function aandariEnterGuest(){localStorage.setItem('aandari_guest_mode','1');aandariUnlockStore()}
