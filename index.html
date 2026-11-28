@@ -811,34 +811,25 @@ async function aandariSendCustomerOtp(){
   const field=document.getElementById('aandariPhone'),raw=String(field.value||'').replace(/[\s()-]/g,'').trim();
   const phone=/^\d{10}$/.test(raw)?'+91'+raw:raw;
   if(!/^\+91[6-9]\d{9}$/.test(phone))return aandariAuthMessage('Enter a valid 10-digit Indian mobile number.');
-  const btn=document.getElementById('aandariSendOtpBtn');btn.disabled=true;btn.textContent='Sending…';
-  try{
-    const j=await aandariAuth('otp',{phone,create_user:true});
-    aandariCustomerOtpPhone=phone;
-    document.getElementById('aandariPhoneOtp').style.display='block';
-    document.getElementById('aandariAuthFormSub').textContent='Enter the 6-digit OTP received on '+phone+'.';
-    btn.textContent='Verify OTP';btn.disabled=false;btn.onclick=aandariVerifyCustomerOtp;
-    aandariAuthMessage('OTP request accepted. If SMS authentication is configured on the free plan, check your messages.');
-  }catch(e){
-    btn.disabled=false;btn.textContent='Try OTP again';
-    aandariAuthMessage((e.message||'OTP could not be sent.')+' No paid SMS service was activated.');
-  }
+  aandariCustomerOtpPhone=phone;
+  const btn=document.getElementById('aandariSendOtpBtn'),otp=document.getElementById('aandariPhoneOtp');
+  otp.style.display='block';otp.value='';
+  document.getElementById('aandariAuthFormSub').textContent='Demo mode: enter the test OTP shown below for '+phone+'.';
+  btn.textContent='Verify Demo OTP';btn.disabled=false;btn.onclick=aandariVerifyCustomerOtp;
+  aandariAuthMessage('DEMO MODE ONLY — No SMS was sent. Test OTP: 123456. This is not real phone verification.');
 }
 async function aandariVerifyCustomerOtp(){
   const token=document.getElementById('aandariPhoneOtp').value.trim();
-  if(!/^\\d{6}$/.test(token))return aandariAuthMessage('Enter the 6-digit OTP.');
-  const btn=document.getElementById('aandariSendOtpBtn');btn.disabled=true;btn.textContent='Verifying…';
-  try{
-    const j=await aandariAuth('verify',{phone:aandariCustomerOtpPhone,token,type:'sms'});
-    if(!j.access_token||!j.user)throw new Error('Verification response did not contain a customer session.');
-    aandariSession=j;
-    localStorage.setItem('aandari_auth_session',JSON.stringify(j));
-    localStorage.setItem('aandari_customer_session',JSON.stringify(j));
-    localStorage.removeItem('aandari_guest_mode');
-    await refreshAdminState();
-    aandariUnlockStore();
-    toast('Login successful.');
-  }catch(e){btn.disabled=false;btn.textContent='Send OTP again';btn.onclick=aandariSendCustomerOtp;aandariAuthMessage(e.message||'OTP verification failed.')}
+  if(token!=='123456')return aandariAuthMessage('Incorrect demo OTP. For testing, enter 123456.');
+  const btn=document.getElementById('aandariSendOtpBtn');btn.disabled=true;btn.textContent='Opening store…';
+  const demo={phone:aandariCustomerOtpPhone,mode:'demo',verified:false,created_at:new Date().toISOString()};
+  localStorage.setItem('aandari_demo_customer',JSON.stringify(demo));
+  localStorage.setItem('aandari_guest_mode','1');
+  localStorage.removeItem('aandari_auth_session');
+  localStorage.removeItem('aandari_customer_session');
+  aandariSession=null;
+  aandariUnlockStore();
+  toast('Demo access enabled. Phone number is not verified.');
 }
 function aandariUnlockStore(){document.getElementById('aandariAuthScreen').classList.remove('show');document.querySelector('.app')?.classList.add('aandari-unlocked')}
 function aandariEnterGuest(){localStorage.setItem('aandari_guest_mode','1');aandariUnlockStore()}
