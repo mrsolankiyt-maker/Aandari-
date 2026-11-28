@@ -465,7 +465,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
       <p class="aandari-auth-sub">Discover quality products and enjoy a better shopping experience.</p><div class="aandari-auth-showcase" aria-label="AANDARI product categories"><div class="aandari-auth-products"><div class="aandari-auth-product"><span>🚿</span><small>SANITARYWARE</small></div><div class="aandari-auth-product"><span>🔧</span><small>HARDWARE</small></div><div class="aandari-auth-product"><span>🎨</span><small>PAINTS</small></div></div></div>
       <button class="aandari-auth-btn" onclick="aandariGoogleLogin()"><span class="aandari-auth-google-icon">G</span> Continue with Google</button>
       <div class="aandari-auth-divider">OR CONTINUE WITH</div>
-      <button class="aandari-auth-btn primary" onclick="aandariShowAuthMode('phone')">Get Started with Mobile Number</button>
+      <button class="aandari-auth-btn primary" id="aandariPhoneLoginStart" type="button">Get Started with Mobile Number</button>
       <button class="aandari-auth-btn dark" onclick="aandariShowAuthMode('email')">Login / Create Account with Email</button>
       <button class="aandari-auth-skip" onclick="aandariEnterGuest()">Continue as Guest</button>
       <p class="aandari-auth-foot">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
@@ -508,6 +508,16 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
   }
   window.addEventListener('error',function(e){showAandariStartupFallback(e&&e.message?e.message:'A script failed to start')});
   window.addEventListener('unhandledrejection',function(e){var reason=e&&e.reason;showAandariStartupFallback(reason&&reason.message?reason.message:'A background task failed')});
+  var phoneStart=document.getElementById('aandariPhoneLoginStart');
+  if(phoneStart){phoneStart.addEventListener('click',function(ev){
+    ev.preventDefault();
+    var main=document.getElementById('aandariAuthMain'),form=document.getElementById('aandariAuthForm'),email=document.getElementById('aandariEmailFields'),phone=document.getElementById('aandariPhoneFields'),submit=document.getElementById('aandariEmailSubmit'),sw=document.getElementById('aandariEmailSwitch'),err=document.getElementById('aandariAuthError'),title=document.getElementById('aandariAuthFormTitle'),sub=document.getElementById('aandariAuthFormSub'),field=document.getElementById('aandariPhone'),otp=document.getElementById('aandariPhoneOtp'),send=document.getElementById('aandariSendOtpBtn');
+    if(!main||!form||!email||!phone||!field||!otp||!send){showAandariStartupFallback('Login form could not be initialized');return;}
+    main.style.display='none';form.style.display='block';email.style.display='none';phone.style.display='block';if(submit)submit.style.display='none';if(sw)sw.style.display='none';if(err){err.style.display='none';err.textContent='';}
+    if(title)title.textContent='Login with Mobile Number';if(sub)sub.textContent='Enter your 10-digit mobile number.';
+    field.value='';field.disabled=false;field.removeAttribute('readonly');otp.value='';otp.style.display='none';send.textContent='Send OTP';send.disabled=false;send.onclick=null;
+    setTimeout(function(){field.focus();},100);
+  });}
   setTimeout(showAandariLogin,1400);
 })();
 </script>
