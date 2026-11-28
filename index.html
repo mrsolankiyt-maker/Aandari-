@@ -508,58 +508,41 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
   }
   window.addEventListener('error',function(e){showAandariStartupFallback(e&&e.message?e.message:'A script failed to start')});
   window.addEventListener('unhandledrejection',function(e){var reason=e&&e.reason;showAandariStartupFallback(reason&&reason.message?reason.message:'A background task failed')});
+  /* Bind login actions directly; remove competing capture-phase touch handlers. */
   var phoneStart=document.getElementById('aandariPhoneLoginStart');
-  if(phoneStart){phoneStart.addEventListener('click',function(ev){
-    ev.preventDefault();
-    var main=document.getElementById('aandariAuthMain'),form=document.getElementById('aandariAuthForm'),email=document.getElementById('aandariEmailFields'),phone=document.getElementById('aandariPhoneFields'),submit=document.getElementById('aandariEmailSubmit'),sw=document.getElementById('aandariEmailSwitch'),err=document.getElementById('aandariAuthError'),title=document.getElementById('aandariAuthFormTitle'),sub=document.getElementById('aandariAuthFormSub'),field=document.getElementById('aandariPhone'),otp=document.getElementById('aandariPhoneOtp'),send=document.getElementById('aandariSendOtpBtn');
-    if(!main||!form||!email||!phone||!field||!otp||!send){showAandariStartupFallback('Login form could not be initialized');return;}
-    main.style.display='none';form.style.display='block';email.style.display='none';phone.style.display='block';if(submit)submit.style.display='none';if(sw)sw.style.display='none';if(err){err.style.display='none';err.textContent='';}
-    if(title)title.textContent='Login with Mobile Number';if(sub)sub.textContent='Enter your 10-digit mobile number.';
-    field.value='';field.disabled=false;field.removeAttribute('readonly');otp.value='';otp.style.display='none';send.textContent='Send OTP';send.disabled=false;send.onclick=function(){aandariSendCustomerOtp();};
-    setTimeout(function(){field.focus();},100);
-  });}
-  /* Reliable touch + mouse controls for the login form. */
-  var aandariLastAuthPointerAction=0;
-  function aandariHandleAuthTap(target){
-    var back=target&&target.closest?target.closest('#aandariAuthForm .aandari-auth-skip'):null;
-    var send=target&&target.closest?target.closest('#aandariSendOtpBtn'):null;
-    var login=target&&target.closest?target.closest('#aandariPhoneLoginStart'):null;
-    if(back){aandariShowAuthMode('main');return true;}
-    if(send){if(typeof window.aandariSendCustomerOtp==='function')window.aandariSendCustomerOtp();return true;}
-    if(login){aandariShowAuthMode('phone');return true;}
-    return false;
+  var sendBtn=document.getElementById('aandariSendOtpBtn');
+  var backBtn=document.querySelector('#aandariAuthForm .aandari-auth-skip');
+  function openPhoneLogin(ev){
+    if(ev){ev.preventDefault();ev.stopPropagation();}
+    var main=document.getElementById('aandariAuthMain'),form=document.getElementById('aandariAuthForm');
+    var email=document.getElementById('aandariEmailFields'),phone=document.getElementById('aandariPhoneFields');
+    var submit=document.getElementById('aandariEmailSubmit'),sw=document.getElementById('aandariEmailSwitch');
+    var field=document.getElementById('aandariPhone'),otp=document.getElementById('aandariPhoneOtp');
+    if(!main||!form||!email||!phone||!field||!otp||!sendBtn)return;
+    main.style.display='none';form.style.display='block';email.style.display='none';phone.style.display='block';
+    if(submit)submit.style.display='none';if(sw)sw.style.display='none';
+    document.getElementById('aandariAuthFormTitle').textContent='Login with Mobile Number';
+    document.getElementById('aandariAuthFormSub').textContent='Enter your 10-digit mobile number.';
+    field.disabled=false;field.removeAttribute('readonly');otp.value='';otp.style.display='none';
+    sendBtn.disabled=false;sendBtn.textContent='Send OTP';sendBtn.onclick=sendDemoOtp;
+    var err=document.getElementById('aandariAuthError');if(err){err.textContent='';err.style.display='none';}
   }
-  document.addEventListener('pointerup',function(ev){
-    if(aandariHandleAuthTap(ev.target)){
-      aandariLastAuthPointerAction=Date.now();
-      ev.preventDefault();ev.stopImmediatePropagation();
-    }
-  },true);
-  document.addEventListener('click',function(ev){
-    if(Date.now()-aandariLastAuthPointerAction<700){ev.preventDefault();ev.stopImmediatePropagation();return;}
-
-    var login=ev.target&&ev.target.closest?ev.target.closest('#aandariPhoneLoginStart'):null;
-    var send=ev.target&&ev.target.closest?ev.target.closest('#aandariSendOtpBtn'):null;
-    if(login){
-      ev.preventDefault();ev.stopImmediatePropagation();
-      var main=document.getElementById('aandariAuthMain'),form=document.getElementById('aandariAuthForm'),email=document.getElementById('aandariEmailFields'),phone=document.getElementById('aandariPhoneFields'),submit=document.getElementById('aandariEmailSubmit'),sw=document.getElementById('aandariEmailSwitch'),field=document.getElementById('aandariPhone'),otp=document.getElementById('aandariPhoneOtp'),btn=document.getElementById('aandariSendOtpBtn');
-      if(main&&form&&email&&phone&&field&&otp&&btn){main.style.display='none';form.style.display='block';email.style.display='none';phone.style.display='block';if(submit)submit.style.display='none';if(sw)sw.style.display='none';field.value='';field.disabled=false;otp.value='';otp.style.display='none';btn.textContent='Send OTP';btn.disabled=false;btn.style.display='flex';btn.style.pointerEvents='auto';document.getElementById('aandariAuthFormTitle').textContent='Login with Mobile Number';document.getElementById('aandariAuthFormSub').textContent='Enter your 10-digit mobile number.';setTimeout(function(){field.focus();},100);}
-      return;
-    }
-    if(send){
-      ev.preventDefault();ev.stopImmediatePropagation();
-      if(typeof window.aandariSendCustomerOtp==='function')window.aandariSendCustomerOtp();
-    }
-  },true);
-  /* Android WebView fallback: handle touch directly if Pointer Events are swallowed. */
-  document.addEventListener('touchend',function(ev){
-    if(Date.now()-aandariLastAuthPointerAction<700)return;
-    var handled=aandariHandleAuthTap(ev.target);
-    if(handled){aandariLastAuthPointerAction=Date.now();ev.preventDefault();ev.stopImmediatePropagation();}
-  },{capture:true,passive:false});
-  /* Ensure the visible login controls remain hit-testable above decorative layers. */
+  function sendDemoOtp(ev){
+    if(ev){ev.preventDefault();ev.stopPropagation();}
+    if(typeof window.aandariSendCustomerOtp==='function'){window.aandariSendCustomerOtp();}
+    else {var err=document.getElementById('aandariAuthError');if(err){err.textContent='OTP test function is loading. Please refresh.';err.style.display='block';}}
+  }
+  function returnToLogin(ev){
+    if(ev){ev.preventDefault();ev.stopPropagation();}
+    var main=document.getElementById('aandariAuthMain'),form=document.getElementById('aandariAuthForm');
+    if(main)main.style.display='block';if(form)form.style.display='none';
+    var err=document.getElementById('aandariAuthError');if(err){err.textContent='';err.style.display='none';}
+  }
+  if(phoneStart)phoneStart.onclick=openPhoneLogin;
+  if(sendBtn)sendBtn.onclick=sendDemoOtp;
+  if(backBtn)backBtn.onclick=returnToLogin;
   var authStyle=document.createElement('style');
-  authStyle.textContent='#aandariAuthScreen,#aandariAuthScreen .aandari-auth-card,#aandariAuthScreen button,#aandariAuthScreen input{pointer-events:auto!important}#aandariAuthScreen button{position:relative;z-index:5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}#aandariAuthScreen:before{pointer-events:none!important}';
+  authStyle.textContent='#aandariAuthScreen{z-index:10001;pointer-events:auto!important}#aandariAuthScreen .aandari-auth-card,#aandariAuthScreen button,#aandariAuthScreen input{pointer-events:auto!important}#aandariAuthScreen button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}';
   document.head.appendChild(authStyle);
   setTimeout(showAandariLogin,1400);
 })();
