@@ -474,7 +474,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
       <p class="aandari-auth-sub" id="aandariAuthFormSub">Enter your email and password to continue.</p>
       <div class="aandari-auth-error" id="aandariAuthError"></div>
       <div id="aandariEmailFields"><input class="aandari-auth-field" id="aandariEmail" type="email" placeholder="Email address" autocomplete="email"><input class="aandari-auth-field" id="aandariPassword" type="password" placeholder="Password (minimum 6 characters)" autocomplete="current-password"></div>
-      <div id="aandariPhoneFields" style="display:none"><div class="aandari-phone-entry"><span class="aandari-phone-code">+91</span><input class="aandari-auth-field" id="aandariPhone" type="tel" value="" placeholder="Enter 10-digit mobile number" autocomplete="tel-national" inputmode="numeric" pattern="[0-9]*" maxlength="10" enterkeyhint="done" aria-label="10-digit mobile number" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"></div><button class="aandari-auth-btn" id="aandariSendOtpBtn" onclick="aandariSendCustomerOtp()">Send OTP</button><input class="aandari-auth-field" id="aandariPhoneOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Enter 6-digit OTP" style="display:none"></div>
+      <div id="aandariPhoneFields" style="display:none"><div class="aandari-phone-entry"><span class="aandari-phone-code">+91</span><input class="aandari-auth-field" id="aandariPhone" type="tel" value="" placeholder="Enter 10-digit mobile number" autocomplete="tel-national" inputmode="numeric" pattern="[0-9]*" maxlength="10" enterkeyhint="done" aria-label="10-digit mobile number" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"></div><button class="aandari-auth-btn" id="aandariSendOtpBtn" onclick="aandariSendCustomerOtp()">Send WhatsApp OTP</button><input class="aandari-auth-field" id="aandariPhoneOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Enter 6-digit OTP" style="display:none"></div>
       <button class="aandari-auth-btn primary" id="aandariEmailSubmit" onclick="aandariEmailSubmit()">Login</button>
       <div class="aandari-auth-switch" id="aandariEmailSwitch">New to AANDARI? <button onclick="aandariToggleSignup()">Create account</button></div>
       <button class="aandari-auth-skip" onclick="aandariShowAuthMode('main')">← Back</button>
@@ -963,7 +963,7 @@ function aandariShowAuthMode(mode){
   if(mode==='main'){main.style.display='block';form.style.display='none';return}
   main.style.display='none';form.style.display='block';email.style.display='none';phone.style.display='block';submit.style.display='none';sw.style.display='none';
   document.getElementById('aandariAuthFormTitle').textContent='Login with Mobile Number';
-  document.getElementById('aandariAuthFormSub').textContent='Enter your 10-digit mobile number. We will send a one-time password if free SMS authentication is available.';
+  document.getElementById('aandariAuthFormSub').textContent='Enter your 10-digit mobile number. We will send a one-time password to your WhatsApp number.';
   const phoneInput=document.getElementById('aandariPhone');phoneInput.value='';phoneInput.removeAttribute('readonly');phoneInput.disabled=false;setTimeout(()=>phoneInput.focus(),120);const otp=document.getElementById('aandariPhoneOtp');otp.style.display='none';otp.value='';
   const send=document.getElementById('aandariSendOtpBtn');send.textContent='Send OTP';send.onclick=function(){aandariSendCustomerOtp()};send.disabled=false;send.style.pointerEvents='auto';send.style.position='relative';send.style.zIndex='3';
 }
@@ -975,15 +975,15 @@ async function aandariSendCustomerOtp(){
   aandariCustomerOtpPhone='+91'+raw;
   const btn=document.getElementById('aandariSendOtpBtn'),otp=document.getElementById('aandariPhoneOtp'),sub=document.getElementById('aandariAuthFormSub');
   if(!btn||!otp||!sub)return aandariAuthMessage('Login form is not ready. Please refresh.');
-  btn.disabled=true;btn.textContent='Sending OTP…';
-  try{await aandariAuth('otp',{phone:aandariCustomerOtpPhone,create_user:true});otp.style.display='block';otp.value='';otp.focus();sub.textContent='Enter the SMS OTP sent to '+aandariCustomerOtpPhone+'.';btn.textContent='Verify OTP';btn.disabled=false;btn.onclick=aandariVerifyCustomerOtp;aandariAuthMessage('OTP sent successfully. Check your SMS messages.')}
+  btn.disabled=true;btn.textContent='Sending WhatsApp OTP…';
+  try{await aandariAuth('otp',{phone:aandariCustomerOtpPhone,create_user:true});otp.style.display='block';otp.value='';otp.focus();sub.textContent='Enter the WhatsApp OTP sent to '+aandariCustomerOtpPhone+'.';btn.textContent='Verify OTP';btn.disabled=false;btn.onclick=aandariVerifyCustomerOtp;aandariAuthMessage('WhatsApp OTP sent successfully. Check your WhatsApp messages.')}
   catch(e){btn.disabled=false;btn.textContent='Send OTP';aandariAuthMessage(e.message||'Could not send OTP. Please try again.')}
   return false;
 }
 async function aandariVerifyCustomerOtp(ev){
   if(ev){ev.preventDefault();ev.stopPropagation()}
   const otp=document.getElementById('aandariPhoneOtp'),token=String(otp?.value||'').trim();
-  if(!/^[\d]{4,8}$/.test(token)){aandariAuthMessage('Enter the OTP received by SMS.');otp?.focus();return false}
+  if(!/^[\d]{4,8}$/.test(token)){aandariAuthMessage('Enter the OTP received on WhatsApp.');otp?.focus();return false}
   const raw=String(document.getElementById('aandariPhone')?.value||'').replace(/\D/g,''),phone=aandariCustomerOtpPhone||('+91'+raw);
   if(!/^\+91[6-9]\d{9}$/.test(phone)){aandariAuthMessage('Mobile number is missing. Please enter it again.');return false}
   const btn=document.getElementById('aandariSendOtpBtn');if(btn){btn.disabled=true;btn.textContent='Verifying…'}
