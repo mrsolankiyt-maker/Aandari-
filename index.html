@@ -871,14 +871,37 @@ async function aandariLoadSavedAddresses(){
 async function aandariSaveCloudAddress(){
  const a={id:'local-'+Date.now(),recipient_name:document.getElementById('saveAddrName')?.value.trim(),phone:document.getElementById('saveAddrPhone')?.value.trim(),address_line:document.getElementById('saveAddrLine')?.value.trim(),landmark:document.getElementById('saveAddrLandmark')?.value.trim()||'',city:document.getElementById('saveAddrCity')?.value.trim(),state:document.getElementById('saveAddrState')?.value.trim(),pincode:document.getElementById('saveAddrPin')?.value.trim()};
  if(!a.recipient_name||!a.phone||!a.address_line||!a.city||!a.state||!/^[0-9]{6}$/.test(a.pincode||''))return toast('Name, phone, full address, city, state and valid PIN are required');
+ const localRows=aandariReadLocalAddresses();
  if(!aandariSession?.access_token){
-  try{aandariLocalAddresses=aandariReadLocalAddresses();aandariLocalAddresses.unshift(a);aandariWriteLocalAddresses(aandariLocalAddresses);toast('Address saved on this device. Login is not required.');await aandariLoadSavedAddresses();return}catch(e){toast('Could not save address on this device. Check phone storage settings.');return}
+  try{
+   a.is_default=!localRows.some(x=>x.is_default===true);
+   a.created_at=new Date().toISOString();
+   localRows.unshift(a);
+   aandariWriteLocalAddresses(localRows);
+   localStorage.setItem('aandari_selected_address_id',String(a.id));
+   window.aandariSelectedSavedAddress=a;
+   window.aandariLocationLabel=[a.city,a.pincode].filter(Boolean).join(' · ');
+   toast('Address saved on this device. Login is not required.');
+   await aandariLoadSavedAddresses();
+   if(typeof aandariSyncHomeDeliveryLabel==='function')await aandariSyncHomeDeliveryLabel();
+   return;
+  }catch(e){toast('Could not save address on this device. Check browser storage settings.');return}
  }
+ if(!aandariSession.user?.id)return toast('Your login session is incomplete. Please sign in again before saving this address.');
  const btn=document.querySelector('button[onclick="aandariSaveCloudAddress()"]');if(btn){btn.disabled=true;btn.textContent='Saving…'}
  try{
-  const r=await fetch(AANDARI_SUPABASE_URL+'/rest/v1/customer_addresses',{method:'POST',headers:{...aandariHeaders(),'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({user_id:aandariSession.user.id,recipient_name:a.recipient_name,phone:a.phone,address_line:a.address_line,landmark:a.landmark||null,city:a.city,state:a.state,pincode:a.pincode,is_default:aandariCloudAddresses.length===0})});
-  const data=await r.json().catch(()=>[]);if(!r.ok)throw new Error(data.message||data.details||'Address could not be saved');
-  toast('Address saved securely to your account');await aandariLoadSavedAddresses();
+  const r=await fetch(AANDARI_SUPABASE_URL+'/rest/v1/customer_addresses',{method:'POST',headers:{...aandariHeaders(),'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({user_id:aandariSession.user.id,recipient_name:a.recipient_name,phone:a.phone,address_line:a.address_line,landmark:a.landmark||null,city:a.city,state:a.state,pincode:a.pincode,is_default:aandariCloudAddresses.length===0&&!localRows.some(x=>x.is_default===true)})});
+  const data=await r.json().catch(()=>null);
+  if(!r.ok)throw new Error(data?.message||data?.details||data?.hint||'Address could not be saved');
+  const saved=Array.isArray(data)?data[0]:data;
+  if(!saved?.id)throw new Error('The server did not confirm the saved address. Please refresh and check before retrying.');
+  aandariCloudAddresses=[saved,...aandariCloudAddresses.filter(x=>String(x.id)!==String(saved.id))];
+  localStorage.setItem('aandari_selected_address_id',String(saved.id));
+  window.aandariSelectedSavedAddress=saved;
+  window.aandariLocationLabel=[saved.city,saved.pincode].filter(Boolean).join(' · ');
+  toast('Address saved securely to your account');
+  await aandariLoadSavedAddresses();
+  if(typeof aandariSyncHomeDeliveryLabel==='function')await aandariSyncHomeDeliveryLabel();
  }catch(e){toast(e.message||'Address save failed')}finally{if(btn){btn.disabled=false;btn.textContent='Save Address to Account'}}
 }
 async function aandariDeleteCloudAddress(id){
@@ -1369,13 +1392,21 @@ window.openPage=function(p){
 /* Saved delivery address improvements: default selection, home label and checkout autofill. */
 async function aandariAddressRows(){
   const local=aandariReadLocalAddresses();
-  if(!aandariSession?.access_token)return local;
+  const mergeRows=(cloud)=>{
+    const byId=new Map();
+    [...(Array.isArray(cloud)?cloud:[]),...local].forEach(a=>{if(a&&a.id!=null)byId.set(String(a.id),a)});
+    return [...byId.values()].sort((a,b)=>(Number(b.is_default===true)-Number(a.is_default===true))||((Date.parse(b.created_at||'')||0)-(Date.parse(a.created_at||'')||0)));
+  };
+  if(!aandariSession?.access_token)return mergeRows([]);
   try{
     const r=await fetch(AANDARI_SUPABASE_URL+'/rest/v1/customer_addresses?select=id,recipient_name,phone,address_line,landmark,city,state,pincode,is_default,created_at&order=is_default.desc,created_at.desc',{headers:aandariHeaders()});
-    const rows=await r.json();if(!r.ok)throw new Error(rows.message||'Could not load saved addresses');
+    const rows=await r.json();if(!r.ok)throw new Error(rows.message||rows.details||'Could not load saved addresses');
     aandariCloudAddresses=Array.isArray(rows)?rows:[];
-    return aandariCloudAddresses;
-  }catch(e){console.warn('AANDARI address sync:',e);return local;}
+    return mergeRows(aandariCloudAddresses);
+  }catch(e){
+    console.warn('AANDARI address sync:',e);
+    return mergeRows(aandariCloudAddresses);
+  }
 }
 function aandariAddressLabel(a){
   return a?[a.city,a.pincode].filter(Boolean).join(' · '):'';
