@@ -466,7 +466,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
       <div class="aandari-auth-title">Everything for your home.</div>
       <p class="aandari-auth-sub">Discover quality products and enjoy a better shopping experience.</p><div class="aandari-auth-showcase" aria-label="AANDARI product categories"><div class="aandari-auth-products"><div class="aandari-auth-product"><span>🚿</span><small>SANITARYWARE</small></div><div class="aandari-auth-product"><span>🔧</span><small>HARDWARE</small></div><div class="aandari-auth-product"><span>🎨</span><small>PAINTS</small></div></div></div>
                   <button class="aandari-auth-btn primary" id="aandariPhoneLoginStart" type="button" onclick="aandariShowAuthMode('phone')" style="position:relative;z-index:3;pointer-events:auto;touch-action:manipulation">Get Started with Mobile Number</button>
-                  <button class="aandari-auth-skip" id="aandariGuestContinue" type="button" onclick="aandariEnterGuest()">Skip Login &amp; Explore as Guest</button>
+                  
             <p class="aandari-auth-foot">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
     </div>
     <div id="aandariAuthForm" style="display:none">
@@ -863,24 +863,29 @@ function aandariShowAuthMode(mode){
 function aandariToggleSignup(){return}
 async function aandariEmailSubmit(){return aandariSendCustomerOtp()}
 async function aandariSendCustomerOtp(){
-  const field=document.getElementById('aandariPhone'),raw=String(field.value||'').replace(/[\s()-]/g,'').trim();
-  const phone=/^\d{10}$/.test(raw)?'+91'+raw:raw;
-  if(!/^\+91[6-9]\d{9}$/.test(phone))return aandariAuthMessage('Enter a valid 10-digit Indian mobile number.');
-  aandariCustomerOtpPhone=phone;
-  const btn=document.getElementById('aandariSendOtpBtn'),otp=document.getElementById('aandariPhoneOtp');
-  otp.style.display='block';otp.value='';
-  document.getElementById('aandariAuthFormSub').textContent='Demo mode: enter the test OTP shown below for '+phone+'.';
+  const field=document.getElementById('aandariPhone');
+  const raw=String(field?.value||'').replace(/\D/g,'').trim();
+  if(!/^[6-9]\d{9}$/.test(raw))return aandariAuthMessage('Enter a valid 10-digit Indian mobile number.');
+  aandariCustomerOtpPhone='+91'+raw;
+  const btn=document.getElementById('aandariSendOtpBtn');
+  const otp=document.getElementById('aandariPhoneOtp');
+  const sub=document.getElementById('aandariAuthFormSub');
+  if(!btn||!otp||!sub)return aandariAuthMessage('Login form is not ready. Please refresh.');
+  otp.style.display='block';otp.value='';otp.focus();
+  sub.textContent='Demo mode: enter the test OTP shown below.';
   btn.textContent='Verify Demo OTP';btn.disabled=false;btn.onclick=aandariVerifyCustomerOtp;
-  aandariAuthMessage('DEMO MODE ONLY — No SMS was sent. Test OTP: 123456. This is not real phone verification.');
+  aandariAuthMessage('DEMO MODE ONLY — No SMS was sent. Test OTP: 123456. Your phone number is not verified.');
+  return false;
 }
-async function aandariVerifyCustomerOtp(){
+async function aandariVerifyCustomerOtp(ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
   const otp=document.getElementById('aandariPhoneOtp');
   const token=String(otp?.value||'').trim();
   if(token!=='123456'){aandariAuthMessage('Incorrect demo OTP. For testing, enter 123456.');otp?.focus();return false;}
-  const phone=aandariCustomerOtpPhone||('+91'+String(document.getElementById('aandariPhone')?.value||'').replace(/\\D/g,''));
-  if(!/^\\+91[6-9]\\d{9}$/.test(phone)){aandariAuthMessage('Mobile number is missing. Please go back and enter it again.');return false;}
+  const raw=String(document.getElementById('aandariPhone')?.value||'').replace(/\D/g,'');
+  const phone=aandariCustomerOtpPhone||('+91'+raw);
+  if(!/^\+91[6-9]\d{9}$/.test(phone)){aandariAuthMessage('Mobile number is missing. Please go back and enter it again.');return false;}
   try{
-    // Show the profile form immediately; local storage is best-effort only.
     aandariShowProfileCompletion(phone);
     try{
       localStorage.setItem('aandari_demo_customer',JSON.stringify({phone,mode:'demo',verified:false,profile_completed:false,created_at:new Date().toISOString()}));
@@ -889,34 +894,31 @@ async function aandariVerifyCustomerOtp(){
       localStorage.removeItem('aandari_customer_session');
     }catch(storageError){console.warn('AANDARI demo session could not be persisted',storageError);}
     if(typeof toast==='function')toast('Demo OTP accepted. No SMS was sent and the number is not verified.');
-    return false;
   }catch(error){
     console.error('AANDARI profile screen error',error);
     aandariAuthMessage('Could not open profile setup. Please refresh and try again.');
-    return false;
   }
+  return false;
 }
-/* Explicitly expose the OTP handlers to the login fallback script. */
-window.aandariSendCustomerOtp = aandariSendCustomerOtp;
-window.aandariVerifyCustomerOtp = aandariVerifyCustomerOtp;\nwindow.aandariShowProfileCompletion = aandariShowProfileCompletion;
-function aandariUnlockStore(){document.getElementById('aandariAuthScreen').classList.remove('show');document.querySelector('.app')?.classList.add('aandari-unlocked')}
-function aandariEnterGuest(){
-  localStorage.setItem('aandari_guest_mode','1');
-  localStorage.removeItem('aandari_demo_customer');
-  aandariUnlockStore();
+function aandariUnlockStore(){
+  const auth=document.getElementById('aandariAuthScreen');
+  const app=document.querySelector('.app');
+  if(auth)auth.classList.remove('show');
+  if(app)app.classList.add('aandari-unlocked');
 }
 function aandariShowProfileCompletion(phone){
-  const main=document.getElementById('aandariAuthMain'),form=document.getElementById('aandariAuthForm');
+  const main=document.getElementById('aandariAuthMain');
+  const form=document.getElementById('aandariAuthForm');
+  if(!form)throw new Error('Profile form element #aandariAuthForm is missing');
   if(main)main.style.display='none';
-  if(!form)return aandariAuthMessage('Profile form could not load. Please refresh.');
   form.style.display='block';
-  form.innerHTML=`<div class="aandari-auth-title">Complete Your Profile</div>
+  form.innerHTML=\`<div class="aandari-auth-title">Complete Your Profile</div>
     <p class="aandari-auth-sub">Welcome to AANDARI! Please add your details to continue.</p>
     <div class="aandari-auth-error" id="aandariProfileError"></div>
     <label class="aandari-profile-label" for="aandariProfileName">Full Name *</label>
     <input class="aandari-auth-field" id="aandariProfileName" maxlength="60" autocomplete="name" placeholder="Enter your full name">
     <label class="aandari-profile-label" for="aandariProfilePhone">Mobile Number</label>
-    <input class="aandari-auth-field" id="aandariProfilePhone" value="${phone||''}" disabled>
+    <input class="aandari-auth-field" id="aandariProfilePhone" value="\${String(phone||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" disabled>
     <label class="aandari-profile-label" for="aandariProfileEmail">Email Address <span>(Optional)</span></label>
     <input class="aandari-auth-field" id="aandariProfileEmail" type="email" maxlength="120" autocomplete="email" placeholder="Enter email address (optional)">
     <label class="aandari-profile-label" for="aandariProfileDob">Date of Birth <span>(Optional)</span></label>
@@ -924,8 +926,9 @@ function aandariShowProfileCompletion(phone){
     <label class="aandari-profile-label" for="aandariProfileGender">Gender <span>(Optional)</span></label>
     <select class="aandari-auth-field" id="aandariProfileGender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option></select>
     <button class="aandari-auth-btn primary" type="button" onclick="aandariCompleteProfile()">Continue to AANDARI</button>
-    <p class="aandari-auth-foot">Email and other optional details can be added later.</p>`;
-  const card=form.closest('.aandari-auth-card');if(card)card.style.justifyContent='center';
+    <p class="aandari-auth-foot">Email and other optional details can be added later.</p>\`;
+  const card=form.closest('.aandari-auth-card');
+  if(card)card.style.justifyContent='center';
 }
 function aandariCompleteProfile(){
   const name=(document.getElementById('aandariProfileName')?.value||'').trim();
@@ -934,15 +937,24 @@ function aandariCompleteProfile(){
   const dob=document.getElementById('aandariProfileDob')?.value||'';
   const gender=document.getElementById('aandariProfileGender')?.value||'';
   const err=document.getElementById('aandariProfileError');
-  if(name.length<2){if(err){err.textContent='Please enter your full name.';err.style.display='block'}return}
-  if(email&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)){if(err){err.textContent='Please enter a valid email address or leave it blank.';err.style.display='block'}return}
+  if(name.length<2){if(err){err.textContent='Please enter your full name.';err.style.display='block';}return;}
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){if(err){err.textContent='Please enter a valid email address or leave it blank.';err.style.display='block';}return;}
   const profile={name,email,phone,dob,gender,completed:true,updated_at:new Date().toISOString()};
-  localStorage.setItem('aandari_profile_v1_demo_'+phone.replace(/\\D/g,''),JSON.stringify(profile));
-  localStorage.setItem('aandari_demo_customer',JSON.stringify({phone,mode:'demo',verified:false,profile_completed:true,created_at:new Date().toISOString()}));
-  localStorage.removeItem('aandari_guest_mode');
+  try{
+    localStorage.setItem('aandari_profile_v1_demo_'+phone.replace(/\D/g,''),JSON.stringify(profile));
+    localStorage.setItem('aandari_demo_customer',JSON.stringify({phone,mode:'demo',verified:false,profile_completed:true,created_at:new Date().toISOString()}));
+    localStorage.removeItem('aandari_guest_mode');
+  }catch(storageError){
+    console.error('AANDARI profile save failed',storageError);
+    if(err){err.textContent='Could not save your profile on this device. Please check browser storage and try again.';err.style.display='block';}
+    return;
+  }
   aandariUnlockStore();
   if(typeof toast==='function')toast('Profile saved. Welcome to AANDARI!');
 }
+window.aandariSendCustomerOtp=aandariSendCustomerOtp;
+window.aandariVerifyCustomerOtp=aandariVerifyCustomerOtp;
+window.aandariShowProfileCompletion=aandariShowProfileCompletion;
 // Require login and profile completion on every fresh app entry; completed demo profiles can continue.
 const aandariOriginalBoot=setTimeout(()=>{
   const splash=document.getElementById('splash');if(splash)splash.classList.add('hide');
