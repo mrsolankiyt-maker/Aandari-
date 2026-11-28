@@ -874,21 +874,31 @@ async function aandariSendCustomerOtp(){
   aandariAuthMessage('DEMO MODE ONLY — No SMS was sent. Test OTP: 123456. This is not real phone verification.');
 }
 async function aandariVerifyCustomerOtp(){
-  const token=document.getElementById('aandariPhoneOtp').value.trim();
-  if(token!=='123456')return aandariAuthMessage('Incorrect demo OTP. For testing, enter 123456.');
-  const btn=document.getElementById('aandariSendOtpBtn');btn.disabled=true;btn.textContent='Opening store…';
-  const demo={phone:aandariCustomerOtpPhone,mode:'demo',verified:false,profile_completed:false,created_at:new Date().toISOString()};
-  localStorage.setItem('aandari_demo_customer',JSON.stringify(demo));
-  localStorage.removeItem('aandari_guest_mode');
-  localStorage.removeItem('aandari_auth_session');
-  localStorage.removeItem('aandari_customer_session');
-  aandariSession=null;
-  aandariShowProfileCompletion(demo.phone);
-  toast('Demo OTP accepted for testing. No SMS was sent and the number is not verified.');
+  const otp=document.getElementById('aandariPhoneOtp');
+  const token=String(otp?.value||'').trim();
+  if(token!=='123456'){aandariAuthMessage('Incorrect demo OTP. For testing, enter 123456.');otp?.focus();return false;}
+  const phone=aandariCustomerOtpPhone||('+91'+String(document.getElementById('aandariPhone')?.value||'').replace(/\\D/g,''));
+  if(!/^\\+91[6-9]\\d{9}$/.test(phone)){aandariAuthMessage('Mobile number is missing. Please go back and enter it again.');return false;}
+  try{
+    // Show the profile form immediately; local storage is best-effort only.
+    aandariShowProfileCompletion(phone);
+    try{
+      localStorage.setItem('aandari_demo_customer',JSON.stringify({phone,mode:'demo',verified:false,profile_completed:false,created_at:new Date().toISOString()}));
+      localStorage.removeItem('aandari_guest_mode');
+      localStorage.removeItem('aandari_auth_session');
+      localStorage.removeItem('aandari_customer_session');
+    }catch(storageError){console.warn('AANDARI demo session could not be persisted',storageError);}
+    if(typeof toast==='function')toast('Demo OTP accepted. No SMS was sent and the number is not verified.');
+    return false;
+  }catch(error){
+    console.error('AANDARI profile screen error',error);
+    aandariAuthMessage('Could not open profile setup. Please refresh and try again.');
+    return false;
+  }
 }
 /* Explicitly expose the OTP handlers to the login fallback script. */
 window.aandariSendCustomerOtp = aandariSendCustomerOtp;
-window.aandariVerifyCustomerOtp = aandariVerifyCustomerOtp;
+window.aandariVerifyCustomerOtp = aandariVerifyCustomerOtp;\nwindow.aandariShowProfileCompletion = aandariShowProfileCompletion;
 function aandariUnlockStore(){document.getElementById('aandariAuthScreen').classList.remove('show');document.querySelector('.app')?.classList.add('aandari-unlocked')}
 function aandariEnterGuest(){
   localStorage.setItem('aandari_guest_mode','1');
@@ -1229,14 +1239,9 @@ window.openPage=function(p){
         return false;
       }
       if(String(otp.value||'').trim()!=='123456'){message('Incorrect OTP. For testing, enter 123456.');otp.focus();return false;}
-      try{
-        localStorage.setItem('aandari_demo_customer',JSON.stringify({phone:'+91'+btn.dataset.demoOtpPhone,mode:'demo',verified:false,profile_completed:false,created_at:new Date().toISOString()}));
-        localStorage.removeItem('aandari_guest_mode');
-        localStorage.removeItem('aandari_auth_session');
-        localStorage.removeItem('aandari_customer_session');
-      }catch(e){}
-      if(typeof aandariShowProfileCompletion==='function'){aandariShowProfileCompletion('+91'+btn.dataset.demoOtpPhone);}
-      else {message('Profile form is unavailable. Please refresh.');}
+      window.aandariCustomerOtpPhone='+91'+btn.dataset.demoOtpPhone;
+      if(typeof window.aandariVerifyCustomerOtp==='function'){window.aandariVerifyCustomerOtp();return false;}
+      message('OTP verification is not ready. Please refresh and try again.');
       return false;
     };
   }
