@@ -912,13 +912,13 @@ function aandariShowProfileCompletion(phone){
   if(!form)throw new Error('Profile form element #aandariAuthForm is missing');
   if(main)main.style.display='none';
   form.style.display='block';
-  form.innerHTML=\`<div class="aandari-auth-title">Complete Your Profile</div>
+  form.innerHTML=`<div class="aandari-auth-title">Complete Your Profile</div>
     <p class="aandari-auth-sub">Welcome to AANDARI! Please add your details to continue.</p>
     <div class="aandari-auth-error" id="aandariProfileError"></div>
     <label class="aandari-profile-label" for="aandariProfileName">Full Name *</label>
     <input class="aandari-auth-field" id="aandariProfileName" maxlength="60" autocomplete="name" placeholder="Enter your full name">
     <label class="aandari-profile-label" for="aandariProfilePhone">Mobile Number</label>
-    <input class="aandari-auth-field" id="aandariProfilePhone" value="\${String(phone||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" disabled>
+    <input class="aandari-auth-field" id="aandariProfilePhone" value="${String(phone||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" disabled>
     <label class="aandari-profile-label" for="aandariProfileEmail">Email Address <span>(Optional)</span></label>
     <input class="aandari-auth-field" id="aandariProfileEmail" type="email" maxlength="120" autocomplete="email" placeholder="Enter email address (optional)">
     <label class="aandari-profile-label" for="aandariProfileDob">Date of Birth <span>(Optional)</span></label>
@@ -926,7 +926,7 @@ function aandariShowProfileCompletion(phone){
     <label class="aandari-profile-label" for="aandariProfileGender">Gender <span>(Optional)</span></label>
     <select class="aandari-auth-field" id="aandariProfileGender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option></select>
     <button class="aandari-auth-btn primary" type="button" onclick="aandariCompleteProfile()">Continue to AANDARI</button>
-    <p class="aandari-auth-foot">Email and other optional details can be added later.</p>\`;
+    <p class="aandari-auth-foot">Email and other optional details can be added later.</p>`;
   const card=form.closest('.aandari-auth-card');
   if(card)card.style.justifyContent='center';
 }
