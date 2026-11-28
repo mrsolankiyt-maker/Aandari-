@@ -542,11 +542,18 @@ window.openPage=window.openPage||function(target){
     var sub=document.getElementById('aandariAuthFormSub');
     var err=document.getElementById('aandariAuthError');
     var number=String(phone&&phone.value||'').replace(/\D/g,'');
-    if(!/^[6-9]\d{9}$/.test(number)){if(err){err.textContent='Enter a valid 10-digit Indian mobile number.';err.style.display='block';}return;}
+    if(!/^[6-9]\d{9}$/.test(number)){if(err){err.textContent='Enter a valid 10-digit Indian mobile number.';err.style.display='block';}return false;}
+    if(otp && otp.style.display!=='none' && otp.offsetParent!==null){
+      if(typeof window.aandariVerifyCustomerOtp==='function') return window.aandariVerifyCustomerOtp();
+      if(err){err.textContent='OTP verification is not ready. Please refresh and try again.';err.style.display='block';}
+      return false;
+    }
+    window.aandariCustomerOtpPhone='+91'+number;
     if(otp){otp.style.display='block';otp.value='';otp.focus();}
     if(sub)sub.textContent='Demo mode: enter test OTP 123456 to continue.';
     if(err){err.textContent='DEMO MODE ONLY — No SMS was sent. Test OTP: 123456. Your phone number is not verified.';err.style.display='block';}
     if(btn){btn.textContent='Verify Demo OTP';btn.disabled=false;btn.onclick=verifyDemoOtp;}
+    return false;
   }
   function verifyDemoOtp(ev){
     if(ev){ev.preventDefault();ev.stopPropagation();}
