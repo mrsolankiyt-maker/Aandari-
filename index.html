@@ -635,21 +635,39 @@ function aandariPersistSession(session){
   return true;
 }
 let aandariSessionRefreshPromise=null;
+function aandariReadSavedSession(){
+  try{
+    for(const key of ['aandari_auth_session','aandari_customer_session']){
+      const raw=localStorage.getItem(key);if(!raw)continue;
+      const saved=JSON.parse(raw);if(saved?.access_token){aandariSession=saved;return saved}
+    }
+  }catch(e){console.warn('AANDARI saved session read failed',e)}
+  return aandariSession?.access_token?aandariSession:null;
+}
 async function aandariEnsureSession(){
   if(aandariSessionRefreshPromise)return aandariSessionRefreshPromise;
   aandariSessionRefreshPromise=(async()=>{
+    const saved=aandariReadSavedSession();
+    if(!saved?.access_token)return false;
+    const expiry=Number(saved.expires_at||0)*1000;
+    if(!expiry||expiry>Date.now()+120000)return true;
+    if(!saved.refresh_token){
+      console.warn('AANDARI session has no refresh token; retaining saved login until explicit sign out.');
+      return true;
+    }
     try{
-      if(!aandariSession?.access_token){const saved=JSON.parse(localStorage.getItem('aandari_auth_session')||localStorage.getItem('aandari_customer_session')||'null');if(saved?.access_token)aandariSession=saved}
-      if(!aandariSession?.access_token)return false;
-      const expiry=Number(aandariSession.expires_at||0)*1000;
-      if(!expiry||expiry>Date.now()+90000)return true;
-      if(!aandariSession.refresh_token)return false;
-      const r=await fetch(AANDARI_SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:AANDARI_SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:aandariSession.refresh_token})});
-      const j=await r.json().catch(()=>({}));if(!r.ok||!j.access_token)throw new Error(j.msg||j.message||'Session expired');
-      aandariPersistSession(j);return true;
-    }catch(e){console.warn('AANDARI session restore failed',e);aandariSession=null;try{localStorage.removeItem('aandari_auth_session');localStorage.removeItem('aandari_customer_session')}catch(x){}return false}
-    finally{aandariSessionRefreshPromise=null}
-  })();return aandariSessionRefreshPromise;
+      const r=await fetch(AANDARI_SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:AANDARI_SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:saved.refresh_token})});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok||!j.access_token)throw new Error(j.msg||j.message||j.error_description||'Session refresh temporarily unavailable');
+      aandariPersistSession(j);
+      return true;
+    }catch(e){
+      console.warn('AANDARI token refresh deferred; keeping saved session:',e);
+      aandariSession=saved;
+      return true;
+    }finally{aandariSessionRefreshPromise=null}
+  })();
+  return aandariSessionRefreshPromise;
 }
 async function refreshAdminState(){aandariAdmin=false;if(!aandariSession?.access_token)return false;try{const r=await fetch(AANDARI_SUPABASE_URL+'/rest/v1/profiles?select=role&id=eq.'+encodeURIComponent(aandariSession.user.id),{headers:aandariHeaders()});const rows=await r.json();aandariAdmin=r.ok&&rows?.[0]?.role==='admin';return aandariAdmin}catch(e){return false}}
 let aandariCustomerProfile={};
@@ -1279,6 +1297,6 @@ window.aandariShowProfileCompletion=function(phone){var main=document.getElement
 window.aandariCompleteProfile=function(){var n=(document.getElementById('aandariProfileName')?.value||'').trim(),p=(document.getElementById('aandariProfilePhone')?.value||'').trim(),e=(document.getElementById('aandariProfileEmail')?.value||'').trim(),d=document.getElementById('aandariProfileDob')?.value||'',g=document.getElementById('aandariProfileGender')?.value||'',err=document.getElementById('aandariProfileError');function fail(m){if(err){err.textContent=m;err.style.display='block'}}if(n.length<2)return fail('Please enter your full name.');if(e&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))return fail('Please enter a valid email address.');var data={name:n,phone:p,email:e,dob:d,gender:g,completed:true,updated_at:new Date().toISOString()};try{var digits=p.replace(/\D/g,'');localStorage.setItem('aandari_profile_v1_demo_'+digits,JSON.stringify(data));localStorage.setItem('aandari_profile_v1_'+digits,JSON.stringify(data));localStorage.setItem('aandari_demo_customer',JSON.stringify({phone:p,mode:'demo',verified:false,profile_completed:true}));localStorage.removeItem('aandari_guest_mode')}catch(x){return fail('Could not save your profile on this device.')}var a=document.getElementById('aandariAuthScreen'),app=document.querySelector('.app');if(a)a.classList.remove('show');if(app)app.classList.add('aandari-unlocked');if(typeof toast==='function')toast('Profile saved. Welcome to AANDARI!')};
 window.aandariVerifyCustomerOtp=function(ev){if(ev){ev.preventDefault();ev.stopPropagation()}var otp=document.getElementById('aandariPhoneOtp'),token=String(otp?.value||'').trim(),num=String(document.getElementById('aandariPhone')?.value||'').replace(/\D/g,''),err=document.getElementById('aandariAuthError');if(token!=='123456'){if(err){err.textContent='Incorrect demo OTP. Enter 123456 to test.';err.style.display='block'}if(otp)otp.focus();return false}if(!/^[6-9]\d{9}$/.test(num)){if(err){err.textContent='Enter a valid 10-digit mobile number.';err.style.display='block'}return false}var phone='+91'+num;try{localStorage.setItem('aandari_demo_customer',JSON.stringify({phone:phone,mode:'demo',verified:false,profile_completed:false}));window.aandariShowProfileCompletion(phone)}catch(x){if(err){err.textContent='Profile screen could not open: '+x.message;err.style.display='block'}}return false};
 window.aandariSendCustomerOtp=function(ev){if(ev){ev.preventDefault();ev.stopPropagation()}var f=document.getElementById('aandariPhone'),num=String(f?.value||'').replace(/\D/g,''),otp=document.getElementById('aandariPhoneOtp'),btn=document.getElementById('aandariSendOtpBtn'),sub=document.getElementById('aandariAuthFormSub'),err=document.getElementById('aandariAuthError');if(!/^[6-9]\d{9}$/.test(num)){if(err){err.textContent='Enter a valid 10-digit Indian mobile number.';err.style.display='block'}return false}window.aandariCustomerOtpPhone='+91'+num;if(otp){otp.style.display='block';otp.value='';otp.focus()}if(sub)sub.textContent='Enter the 6-digit demo OTP to continue.';if(btn){btn.textContent='Verify OTP';btn.onclick=window.aandariVerifyCustomerOtp;btn.disabled=false}if(err){err.textContent='TEST MODE ONLY — SMS is not connected. Enter 123456. Your number is not verified.';err.style.display='block'}return false};
-setTimeout(async function(){var s=document.getElementById('splash');if(s)s.classList.add('hide');var a=document.getElementById('aandariAuthScreen'),p=document.querySelector('.app'),g=false,d=null,pr=null;try{g=localStorage.getItem('aandari_guest_mode')==='1';d=JSON.parse(localStorage.getItem('aandari_demo_customer')||'null');if(d?.phone)pr=JSON.parse(localStorage.getItem('aandari_profile_v1_demo_'+d.phone.replace(/\D/g,''))||'null')}catch(x){}try{if(await aandariEnsureSession()){await aandariLoadCustomerData();await refreshAdminState();aandariUnlockStore();return}}catch(e){console.warn('AANDARI startup session restore:',e)}if(g||(d&&pr&&pr.completed)){aandariUnlockStore()}else if(a)a.classList.add('show')},1100);
+/* Startup session restoration is handled once by aandariOriginalBoot above. */
 </script>
 </body></html>
