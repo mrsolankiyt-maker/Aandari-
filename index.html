@@ -632,7 +632,7 @@ function reportsPage(){let sales=orders.reduce((s,o)=>s+o.total,0);return `<h2>S
 function offers(){return `<h2>Coupons & Offers</h2><div class="card"><span class="tag">WELCOME OFFER</span><h3>WELCOME10</h3><p class="muted">Demo coupon · 10% off eligibility to be configured</p><button class="pill" onclick="coupon='WELCOME10';openPage('cart');toast('Coupon copied to cart')">Use Coupon</button></div><div class="card"><h3>AANDARI10</h3><p class="muted">Demo promotion for eligible orders.</p><button class="pill" onclick="coupon='AANDARI10';openPage('cart')">Use Coupon</button></div>`}function support(){return `<h2>Customer Support</h2><div class="card"><h3>How can we help?</h3><p class="muted">Connect WhatsApp Business, phone and email support before launch.</p><button class="btn" onclick="toast('WhatsApp support number not configured yet')">Chat on WhatsApp</button><button class="pill" onclick="toast('Support phone not configured yet')">Call Support</button></div><textarea class="field" placeholder="Write your question"></textarea><button class="btn" style="margin-top:8px" onclick="toast('Demo support request saved')">Submit Query</button>`}function rewardsPage(){return `<h2>Rewards & Referral</h2><div class="card"><div class="emoji" style="font-size:42px">🎁</div><h3>AANDARI Rewards</h3><p class="muted">Earn points on eligible purchases. Reward rules will be configured in the live system.</p><strong>Demo points: 0</strong></div><div class="card"><h3>Refer a Friend</h3><p class="muted">Invite friends and earn rewards after eligible purchases.</p><button class="btn" onclick="navigator.clipboard?.writeText('AANDARI-INVITE');toast('Demo referral code copied')">Copy referral code</button></div>`}function voiceSearch(){if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window))return toast('Voice search needs a supported browser');let R=window.SpeechRecognition||window.webkitSpeechRecognition,r=new R();r.lang=lang==='hi'?'hi-IN':'en-IN';r.onresult=e=>{searchTerm=e.results[0][0].transcript;activeCat='';openPage('search')};r.onerror=()=>toast('Could not hear. Please try again.');r.start()}function aiSearch(){let q=prompt('Describe what you need / अपनी जरूरत लिखें');if(!q)return;searchTerm=q;activeCat='';openPage('search');toast('AI-style demo search: matching product text. AI service not connected.')}
 function submitReview(id){let txt=document.getElementById('reviewText').value;if(!txt)return toast('Write a review first');reviews[id]=[...(reviews[id]||[]),txt];toast('Review saved in demo')}
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('AANDARI service worker registration failed',err))}
-// Startup is deliberately deferred until all AANDARI modules and login handlers are defined.
+load();render();syncCatalog();refreshAdminState().then(()=>{if(page==='admin')render()});setTimeout(()=>document.getElementById('splash').classList.add('hide'),1900);document.getElementById('langBtn').textContent=lang==='hi'?'EN / हिं':'हिं / EN';
 
 // Customer sign-in gate: the original storefront remains intact behind this screen.
 let aandariAuthMode='main',aandariSignup=false,aandariCustomerOtpPhone='';
@@ -858,22 +858,4 @@ function account(){
  return '<section class="account-hero"><div class="account-avatar">'+esc(apInitials(name))+'</div><div><span class="eyebrow">AANDARI CUSTOMER</span><h2>My Account</h2><p>'+esc(name)+'</p></div></section><div class="ap-personal-card"><div class="between"><h3 style="margin:0">Personal Information</h3><button class="pill" onclick="apOpenEdit()">Edit</button></div><div class="ap-personal-grid" style="margin-top:16px"><div><small>Full Name</small><b>'+esc(name)+'</b></div><div><small>Mobile Number</small><b>'+esc(phone)+'</b></div><div><small>Email Address</small><b>'+esc(email)+'</b></div><div><small>Date of Birth</small><b>'+esc(dob)+'</b></div><div><small>Gender</small><b>'+esc(gender)+'</b></div></div></div><div class="account-shortcuts"><button onclick="openPage(\'orders\')"><b>▤</b><span>My Orders</span><small>Track purchases</small></button><button onclick="openPage(\'wishlist\')"><b>♡</b><span>Wishlist</span><small>Saved products</small></button><button onclick="openPage(\'delivery\')"><b>⌖</b><span>Addresses</span><small>Delivery PIN</small></button></div><div class="sectionhead"><h3>Account & Support</h3></div><div class="account-menu">'+[['📍','Delivery PIN','delivery'],['⇄','Compare','compare'],['🎁','Rewards','rewards'],['↩','Returns','returns'],['🎟️','Coupons & Offers','offers'],['💬','Help & Support','support']].map(x=>'<button onclick="openPage(\''+x[2]+'\')"><span>'+x[0]+'</span><b>'+x[1]+'</b><i>›</i></button>').join('')+'</div><button class="pill signout-btn" onclick="aandariSession=null;localStorage.removeItem(\'aandari_auth_session\');localStorage.removeItem(\'aandari_customer_session\');localStorage.removeItem(\'aandari_guest_mode\');aandariShowAuthMode(\'main\');document.getElementById(\'aandariAuthScreen\').classList.add(\'show\')">Sign out</button>';
 }
 
-
-// AANDARI startup: run after all feature and authentication handlers are initialized.
-try {
-  load();
-  render();
-  syncCatalog();
-  refreshAdminState().then(()=>{if(page==='admin')render()}).catch(err=>console.warn('AANDARI admin refresh failed',err));
-  const langButton=document.getElementById('langBtn');
-  if(langButton)langButton.textContent=lang==='hi'?'EN / हिं':'हिं / EN';
-} catch(err) {
-  console.error('AANDARI startup error',err);
-  const splash=document.getElementById('splash');
-  if(splash)splash.classList.add('hide');
-  const app=document.querySelector('.app');
-  if(app)app.classList.remove('aandari-unlocked');
-  const auth=document.getElementById('aandariAuthScreen');
-  if(auth)auth.classList.add('show');
-}
 </script></body></html>
