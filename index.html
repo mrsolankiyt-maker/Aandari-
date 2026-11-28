@@ -858,6 +858,9 @@ async function aandariVerifyCustomerOtp(){
   aandariUnlockStore();
   toast('Demo access enabled. Phone number is not verified.');
 }
+/* Explicitly expose the OTP handlers to the login fallback script. */
+window.aandariSendCustomerOtp = aandariSendCustomerOtp;
+window.aandariVerifyCustomerOtp = aandariVerifyCustomerOtp;
 function aandariUnlockStore(){document.getElementById('aandariAuthScreen').classList.remove('show');document.querySelector('.app')?.classList.add('aandari-unlocked')}
 function aandariEnterGuest(){localStorage.setItem('aandari_guest_mode','1');aandariUnlockStore()}
 // Show the selected full-screen login page after the splash. Guest entry remains an explicit user choice.
