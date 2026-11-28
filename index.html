@@ -551,6 +551,16 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
       if(typeof window.aandariSendCustomerOtp==='function')window.aandariSendCustomerOtp();
     }
   },true);
+  /* Android WebView fallback: handle touch directly if Pointer Events are swallowed. */
+  document.addEventListener('touchend',function(ev){
+    if(Date.now()-aandariLastAuthPointerAction<700)return;
+    var handled=aandariHandleAuthTap(ev.target);
+    if(handled){aandariLastAuthPointerAction=Date.now();ev.preventDefault();ev.stopImmediatePropagation();}
+  },{capture:true,passive:false});
+  /* Ensure the visible login controls remain hit-testable above decorative layers. */
+  var authStyle=document.createElement('style');
+  authStyle.textContent='#aandariAuthScreen,#aandariAuthScreen .aandari-auth-card,#aandariAuthScreen button,#aandariAuthScreen input{pointer-events:auto!important}#aandariAuthScreen button{position:relative;z-index:5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}#aandariAuthScreen:before{pointer-events:none!important}';
+  document.head.appendChild(authStyle);
   setTimeout(showAandariLogin,1400);
 })();
 </script>
