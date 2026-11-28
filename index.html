@@ -892,7 +892,7 @@ function aandariShowAuthMode(mode){
 }
 function aandariToggleSignup(){return}
 async function aandariEmailSubmit(){return aandariSendCustomerOtp()}
-async async function aandariSendCustomerOtp(){
+async function aandariSendCustomerOtp(){
   const field=document.getElementById('aandariPhone'),raw=String(field?.value||'').replace(/\\D/g,'').trim();
   if(!/^[6-9]\\d{9}$/.test(raw))return aandariAuthMessage('Enter a valid 10-digit Indian mobile number.');
   aandariCustomerOtpPhone='+91'+raw;
