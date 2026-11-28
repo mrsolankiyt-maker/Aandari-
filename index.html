@@ -513,8 +513,9 @@ window.openPage=window.openPage||function(target){
       }
     },0);
   }
-  window.addEventListener('error',function(e){showAandariStartupFallback(e&&e.message?e.message:'A script failed to start')});
-  window.addEventListener('unhandledrejection',function(e){var reason=e&&e.reason;showAandariStartupFallback(reason&&reason.message?reason.message:'A background task failed')});
+  function hasSavedCustomerSession(){try{return ['aandari_auth_session','aandari_customer_session'].some(function(k){var s=JSON.parse(localStorage.getItem(k)||'null');return !!(s&&s.access_token)})}catch(e){return false}}
+  window.addEventListener('error',function(e){if(!hasSavedCustomerSession())showAandariStartupFallback(e&&e.message?e.message:'A script failed to start')});
+  window.addEventListener('unhandledrejection',function(e){if(!hasSavedCustomerSession()){var reason=e&&e.reason;showAandariStartupFallback(reason&&reason.message?reason.message:'A background task failed')}});
   /* Bind login actions directly; remove competing capture-phase touch handlers. */
   var phoneStart=document.getElementById('aandariPhoneLoginStart');
   var sendBtn=document.getElementById('aandariSendOtpBtn');
@@ -572,7 +573,7 @@ window.openPage=window.openPage||function(target){
   var authStyle=document.createElement('style');
   authStyle.textContent='#aandariAuthScreen{z-index:10001;pointer-events:auto!important}#aandariAuthScreen .aandari-auth-card,#aandariAuthScreen button,#aandariAuthScreen input{pointer-events:auto!important}#aandariAuthScreen button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}';
   document.head.appendChild(authStyle);
-  setTimeout(showAandariLogin,1400);
+  /* Session-aware boot below decides whether login should be shown. Do not force it here. */
 })();
 </script>
 <script>
