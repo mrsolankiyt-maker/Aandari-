@@ -1364,4 +1364,107 @@ window.openPage=function(p){
   setTimeout(bind,500);
 })();
 </script>
+
+<script id="AANDARI_ADDRESS_DEFAULT_V1">
+/* Saved delivery address improvements: default selection, home label and checkout autofill. */
+async function aandariAddressRows(){
+  const local=aandariReadLocalAddresses();
+  if(!aandariSession?.access_token)return local;
+  try{
+    const r=await fetch(AANDARI_SUPABASE_URL+'/rest/v1/customer_addresses?select=id,recipient_name,phone,address_line,landmark,city,state,pincode,is_default,created_at&order=is_default.desc,created_at.desc',{headers:aandariHeaders()});
+    const rows=await r.json();if(!r.ok)throw new Error(rows.message||'Could not load saved addresses');
+    aandariCloudAddresses=Array.isArray(rows)?rows:[];
+    return aandariCloudAddresses;
+  }catch(e){console.warn('AANDARI address sync:',e);return local;}
+}
+function aandariAddressLabel(a){
+  return a?[a.city,a.pincode].filter(Boolean).join(' · '):'';
+}
+async function aandariSyncHomeDeliveryLabel(){
+  const label=document.getElementById('homeDeliveryLabel');if(!label)return;
+  const rows=await aandariAddressRows();
+  let chosen=null;
+  try{
+    const id=localStorage.getItem('aandari_selected_address_id');
+    if(id)chosen=rows.find(a=>String(a.id)===String(id))||null;
+  }catch(e){}
+  if(!chosen)chosen=rows.find(a=>a.is_default===true)||rows[0]||null;
+  if(chosen){
+    try{localStorage.setItem('aandari_selected_address_id',String(chosen.id));}catch(e){}
+    window.aandariSelectedSavedAddress=chosen;
+    window.aandariLocationLabel=aandariAddressLabel(chosen);
+    label.textContent=window.aandariLocationLabel||'Delivery address selected';
+  }else{
+    label.textContent=window.aandariLocationLabel||pin||'Select Location';
+  }
+}
+async function aandariSetDefaultAddress(id){
+  const local=aandariReadLocalAddresses();
+  if(String(id).startsWith('local-')){
+    const updated=local.map(a=>({...a,is_default:String(a.id)===String(id)}));
+    aandariWriteLocalAddresses(updated);
+  }else{
+    if(!aandariSession?.access_token)return toast('Please sign in to set a synced default address');
+    try{
+      const clear=await fetch(AANDARI_SUPABASE_URL+'/rest/v1/customer_addresses?user_id=eq.'+encodeURIComponent(aandariSession.user.id),{method:'PATCH',headers:{...aandariHeaders(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({is_default:false})});
+      if(!clear.ok)throw new Error('Could not update default address');
+      const set=await fetch(AANDARI_SUPABASE_URL+'/rest/v1/customer_addresses?id=eq.'+encodeURIComponent(id)+'&user_id=eq.'+encodeURIComponent(aandariSession.user.id),{method:'PATCH',headers:{...aandariHeaders(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({is_default:true})});
+      if(!set.ok)throw new Error('Could not set this address as default');
+    }catch(e){toast(e.message||'Default address update failed');return;}
+  }
+  try{localStorage.setItem('aandari_selected_address_id',String(id));}catch(e){}
+  toast('Default delivery address updated');
+  await aandariLoadSavedAddresses();
+  await aandariSyncHomeDeliveryLabel();
+}
+async function aandariLoadSavedAddresses(){
+  const box=document.getElementById('aandariSavedAddresses'),status=document.getElementById('savedAddressStatus');
+  if(!box)return;
+  box.innerHTML='<p class="small muted">Loading saved addresses…</p>';
+  const rows=await aandariAddressRows();
+  const localOnly=!aandariSession?.access_token;
+  if(rows.length){
+    box.innerHTML=rows.map(a=>{
+      const isDefault=a.is_default===true;
+      const id=String(a.id).replace(/'/g,'');
+      return '<div class="card" style="margin:9px 0;padding:12px"><div class="between"><b>'+aandariAddressEsc(a.recipient_name)+'</b><span class="tag">'+aandariAddressEsc(a.pincode)+'</span></div>'+
+      (isDefault?'<p class="small" style="color:#16834a;font-weight:700">✓ DEFAULT ADDRESS</p>':'')+
+      '<p class="small">'+aandariAddressEsc(a.address_line)+(a.landmark?', '+aandariAddressEsc(a.landmark):'')+'</p><p class="small muted">'+aandariAddressEsc(a.city)+', '+aandariAddressEsc(a.state)+' · '+aandariAddressEsc(a.phone)+'</p>'+
+      '<div class="actions"><button class="btn" onclick="aandariUseSavedAddress(\''+id+'\')">Use at Checkout</button>'+
+      (!isDefault?'<button class="pill" onclick="aandariSetDefaultAddress(\''+id+'\')">Set as Default</button>':'')+
+      '<button class="pill" onclick="aandariDeleteCloudAddress(\''+id+'\')">Remove</button></div>'+
+      (localOnly?'<small class="muted">Saved on this device only</small>':'')+'</div>';
+    }).join('');
+  }else{
+    box.innerHTML='<p class="small muted">No saved addresses yet. Add your Home or Work address above.</p>';
+  }
+  if(status)status.textContent=localOnly?'Guest addresses are saved on this device only. Sign in to sync across devices.':rows.length+' address(es) synced with your account.';
+}
+function aandariUseSavedAddress(id){
+  const rows=[...aandariCloudAddresses,...aandariReadLocalAddresses()];
+  const a=rows.find(x=>String(x.id)===String(id));if(!a)return;
+  try{localStorage.setItem('aandari_selected_address_id',String(a.id));}catch(e){}
+  window.aandariSelectedSavedAddress=a;
+  window.aandariLocationLabel=aandariAddressLabel(a);
+  pin=a.pincode;save();
+  openPage('checkout');
+  setTimeout(()=>{
+    const vals={cust:a.recipient_name,phone:a.phone,addr:a.address_line,landmark:a.landmark||'',city:a.city,state:a.state,checkoutPin:a.pincode};
+    Object.entries(vals).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v??''});
+    const h=document.getElementById('homeDeliveryLabel');if(h)h.textContent=window.aandariLocationLabel;
+  },120);
+}
+(function(){
+  const originalRender=window.render;
+  if(typeof originalRender==='function'){
+    window.render=function(){
+      const result=originalRender.apply(this,arguments);
+      if(typeof page!=='undefined'&&(page==='home'||page==='delivery'))setTimeout(aandariSyncHomeDeliveryLabel,0);
+      return result;
+    };
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(aandariSyncHomeDeliveryLabel,0));
+  else setTimeout(aandariSyncHomeDeliveryLabel,0);
+})();
+</script>
 </body></html>
