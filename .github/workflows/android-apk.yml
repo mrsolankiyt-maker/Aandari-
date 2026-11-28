@@ -1,10 +1,9 @@
 name: Build AANDARI Android APK
 
-# Rebuild after the Supabase API authorization fix.
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: ["main", "feature/smart-location-osm"]
     paths:
       - "index.html"
       - "manifest.webmanifest"
@@ -12,6 +11,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - "capacitor.config.json"
+      - "assets/**"
       - ".github/workflows/android-apk.yml"
 
 permissions:
@@ -38,7 +38,7 @@ jobs:
       - name: Install Capacitor dependencies
         run: npm install
 
-      - name: Bundle the real AANDARI storefront
+      - name: Bundle the AANDARI storefront
         run: |
           test -s index.html
           mkdir -p www
@@ -49,7 +49,10 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
-      - name: Sync bundled storefront into Android
+      - name: Generate AANDARI Android icon and splash assets
+        run: npx --yes @capacitor/assets generate --android --assetPath assets --iconBackgroundColor "#ffffff" --splashBackgroundColor "#ffffff"
+
+      - name: Sync storefront and native assets
         run: npx cap sync android
 
       - name: Build installable debug APK
