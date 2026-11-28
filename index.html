@@ -466,6 +466,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
       <div class="aandari-auth-title">Everything for your home.</div>
       <p class="aandari-auth-sub">Discover quality products and enjoy a better shopping experience.</p><div class="aandari-auth-showcase" aria-label="AANDARI product categories"><div class="aandari-auth-products"><div class="aandari-auth-product"><span>🚿</span><small>SANITARYWARE</small></div><div class="aandari-auth-product"><span>🔧</span><small>HARDWARE</small></div><div class="aandari-auth-product"><span>🎨</span><small>PAINTS</small></div></div></div>
                   <button class="aandari-auth-btn primary" id="aandariPhoneLoginStart" type="button" onclick="aandariShowAuthMode('phone')" style="position:relative;z-index:3;pointer-events:auto;touch-action:manipulation">Get Started with Mobile Number</button>
+                  <button class="aandari-auth-skip" id="aandariGuestContinue" type="button" onclick="aandariEnterGuest()">Skip Login &amp; Explore as Guest</button>
             <p class="aandari-auth-foot">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
     </div>
     <div id="aandariAuthForm" style="display:none">
@@ -549,15 +550,8 @@ window.openPage=window.openPage||function(target){
   }
   function verifyDemoOtp(ev){
     if(ev){ev.preventDefault();ev.stopPropagation();}
-    var otp=document.getElementById('aandariPhoneOtp');
-    var err=document.getElementById('aandariAuthError');
-    if(!otp||otp.value.trim()!=='123456'){if(err){err.textContent='Incorrect demo OTP. Enter 123456.';err.style.display='block';}return;}
-    var phone=document.getElementById('aandariPhone');
-    try{localStorage.setItem('aandari_demo_customer',JSON.stringify({phone:'+91'+String(phone.value||'').replace(/\D/g,''),mode:'demo',verified:false,created_at:new Date().toISOString()}));localStorage.setItem('aandari_guest_mode','1');}catch(e){}
-    var auth=document.getElementById('aandariAuthScreen');
-    if(auth)auth.classList.remove('show');
-    var app=document.querySelector('.app');
-    if(app)app.classList.add('aandari-unlocked');
+    if(typeof window.aandariVerifyCustomerOtp==='function'){window.aandariVerifyCustomerOtp();return;}
+    var err=document.getElementById('aandariAuthError');if(err){err.textContent='Profile setup could not load. Please refresh and try again.';err.style.display='block';}
   }
   function returnToLogin(ev){
     if(ev){ev.preventDefault();ev.stopPropagation();}
@@ -889,6 +883,11 @@ async function aandariVerifyCustomerOtp(){
 window.aandariSendCustomerOtp = aandariSendCustomerOtp;
 window.aandariVerifyCustomerOtp = aandariVerifyCustomerOtp;
 function aandariUnlockStore(){document.getElementById('aandariAuthScreen').classList.remove('show');document.querySelector('.app')?.classList.add('aandari-unlocked')}
+function aandariEnterGuest(){
+  localStorage.setItem('aandari_guest_mode','1');
+  localStorage.removeItem('aandari_demo_customer');
+  aandariUnlockStore();
+}
 function aandariShowProfileCompletion(phone){
   const main=document.getElementById('aandariAuthMain'),form=document.getElementById('aandariAuthForm');
   if(main)main.style.display='none';
