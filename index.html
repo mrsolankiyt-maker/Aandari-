@@ -513,6 +513,34 @@ window.openPage=window.openPage||function(target){
       }
     },0);
   }
+  /* Last-resort boot guard: never leave the customer on a blank white screen. */
+  window.setTimeout(function(){
+    var splash=document.getElementById('splash');
+    if(splash)splash.classList.add('hide');
+    var app=document.querySelector('.app');
+    var auth=document.getElementById('aandariAuthScreen');
+    var view=document.getElementById('view');
+    var saved=false;
+    try{
+      saved=['aandari_auth_session','aandari_customer_session'].some(function(k){var s=JSON.parse(localStorage.getItem(k)||'null');return !!(s&&s.access_token)}) ||
+        localStorage.getItem('aandari_guest_mode')==='1';
+      var demo=JSON.parse(localStorage.getItem('aandari_demo_customer')||'null');
+      if(demo&&demo.phone){
+        var digits=String(demo.phone).replace(/\\D/g,'');
+        var profile=JSON.parse(localStorage.getItem('aandari_profile_v1_demo_'+digits)||localStorage.getItem('aandari_profile_v1_'+digits)||'null');
+        saved=saved||demo.profile_completed===true||demo.profile_completed==='true'||!!(profile&&profile.completed);
+      }
+    }catch(e){}
+    if(saved){
+      if(auth)auth.classList.remove('show');
+      if(app)app.classList.add('aandari-unlocked');
+      if(view&&!view.innerHTML.trim()){
+        view.innerHTML='<section style="margin:18px;padding:22px;background:#fff;border:1px solid #eee;border-radius:18px;color:#222"><h2>AANDARI is taking longer to load</h2><p style="color:#666">Your saved session is safe. Please retry loading the store.</p><button type="button" onclick="location.reload()" style="background:#f47700;color:#fff;border:0;border-radius:12px;padding:12px 18px;font-weight:700">Retry loading</button></section>';
+      }
+    }else if(auth&&!auth.classList.contains('show')){
+      auth.classList.add('show');
+    }
+  },4000);
   function hasSavedCustomerSession(){try{var hasAuth=['aandari_auth_session','aandari_customer_session'].some(function(k){try{var s=JSON.parse(localStorage.getItem(k)||'null');return !!(s&&s.access_token)}catch(e){return false}});if(hasAuth||localStorage.getItem('aandari_guest_mode')==='1')return true;var d=JSON.parse(localStorage.getItem('aandari_demo_customer')||'null');if(d&&(d.profile_completed===true||d.profile_completed==='true'))return true;if(d&&d.phone){var digits=String(d.phone).replace(/\D/g,'');var p=JSON.parse(localStorage.getItem('aandari_profile_v1_demo_'+digits)||localStorage.getItem('aandari_profile_v1_'+digits)||'null');if(p&&p.completed)return true}return false}catch(e){return false}}
   window.addEventListener('error',function(e){if(!hasSavedCustomerSession())showAandariStartupFallback(e&&e.message?e.message:'A script failed to start')});
   window.addEventListener('unhandledrejection',function(e){if(!hasSavedCustomerSession()){var reason=e&&e.reason;showAandariStartupFallback(reason&&reason.message?reason.message:'A background task failed')}});
