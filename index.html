@@ -518,6 +518,21 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
     field.value='';field.disabled=false;field.removeAttribute('readonly');otp.value='';otp.style.display='none';send.textContent='Send OTP';send.disabled=false;send.onclick=function(){aandariSendCustomerOtp();};
     setTimeout(function(){field.focus();},100);
   });}
+  /* Reliable mobile login taps: capture taps before any nested handlers or overlays. */
+  document.addEventListener('click',function(ev){
+    var login=ev.target&&ev.target.closest?ev.target.closest('#aandariPhoneLoginStart'):null;
+    var send=ev.target&&ev.target.closest?ev.target.closest('#aandariSendOtpBtn'):null;
+    if(login){
+      ev.preventDefault();ev.stopImmediatePropagation();
+      var main=document.getElementById('aandariAuthMain'),form=document.getElementById('aandariAuthForm'),email=document.getElementById('aandariEmailFields'),phone=document.getElementById('aandariPhoneFields'),submit=document.getElementById('aandariEmailSubmit'),sw=document.getElementById('aandariEmailSwitch'),field=document.getElementById('aandariPhone'),otp=document.getElementById('aandariPhoneOtp'),btn=document.getElementById('aandariSendOtpBtn');
+      if(main&&form&&email&&phone&&field&&otp&&btn){main.style.display='none';form.style.display='block';email.style.display='none';phone.style.display='block';if(submit)submit.style.display='none';if(sw)sw.style.display='none';field.value='';field.disabled=false;otp.value='';otp.style.display='none';btn.textContent='Send OTP';btn.disabled=false;btn.style.display='flex';btn.style.pointerEvents='auto';document.getElementById('aandariAuthFormTitle').textContent='Login with Mobile Number';document.getElementById('aandariAuthFormSub').textContent='Enter your 10-digit mobile number.';setTimeout(function(){field.focus();},100);}
+      return;
+    }
+    if(send){
+      ev.preventDefault();ev.stopImmediatePropagation();
+      if(typeof window.aandariSendCustomerOtp==='function')window.aandariSendCustomerOtp();
+    }
+  },true);
   setTimeout(showAandariLogin,1400);
 })();
 </script>
