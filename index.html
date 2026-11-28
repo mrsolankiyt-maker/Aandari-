@@ -627,6 +627,29 @@ let aandariSession=null,aandariAdmin=false,aandariOtpPhone='';
 try{aandariSession=JSON.parse(localStorage.getItem('aandari_auth_session')||localStorage.getItem('aandari_customer_session')||'null')}catch(e){aandariSession=null}
 const aandariHeaders=()=>({apikey:AANDARI_SUPABASE_KEY,Authorization:'Bearer '+(aandariSession?.access_token||AANDARI_SUPABASE_KEY),'Content-Type':'application/json'});
 async function aandariAuth(path,body){const r=await fetch(AANDARI_SUPABASE_URL+'/auth/v1/'+path,{method:'POST',headers:{apikey:AANDARI_SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.msg||j.message||j.error_description||'Authentication failed');return j}
+function aandariPersistSession(session){
+  if(!session?.access_token)return false;
+  aandariSession=session;
+  try{localStorage.setItem('aandari_auth_session',JSON.stringify(session));localStorage.setItem('aandari_customer_session',JSON.stringify(session));localStorage.removeItem('aandari_guest_mode')}catch(e){console.warn('Could not persist AANDARI login',e)}
+  return true;
+}
+let aandariSessionRefreshPromise=null;
+async function aandariEnsureSession(){
+  if(aandariSessionRefreshPromise)return aandariSessionRefreshPromise;
+  aandariSessionRefreshPromise=(async()=>{
+    try{
+      if(!aandariSession?.access_token){const saved=JSON.parse(localStorage.getItem('aandari_auth_session')||localStorage.getItem('aandari_customer_session')||'null');if(saved?.access_token)aandariSession=saved}
+      if(!aandariSession?.access_token)return false;
+      const expiry=Number(aandariSession.expires_at||0)*1000;
+      if(!expiry||expiry>Date.now()+90000)return true;
+      if(!aandariSession.refresh_token)return false;
+      const r=await fetch(AANDARI_SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:AANDARI_SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:aandariSession.refresh_token})});
+      const j=await r.json().catch(()=>({}));if(!r.ok||!j.access_token)throw new Error(j.msg||j.message||'Session expired');
+      aandariPersistSession(j);return true;
+    }catch(e){console.warn('AANDARI session restore failed',e);aandariSession=null;try{localStorage.removeItem('aandari_auth_session');localStorage.removeItem('aandari_customer_session')}catch(x){}return false}
+    finally{aandariSessionRefreshPromise=null}
+  })();return aandariSessionRefreshPromise;
+}
 async function refreshAdminState(){aandariAdmin=false;if(!aandariSession?.access_token)return false;try{const r=await fetch(AANDARI_SUPABASE_URL+'/rest/v1/profiles?select=role&id=eq.'+encodeURIComponent(aandariSession.user.id),{headers:aandariHeaders()});const rows=await r.json();aandariAdmin=r.ok&&rows?.[0]?.role==='admin';return aandariAdmin}catch(e){return false}}
 async function sendAdminOtp(){const phone=document.getElementById('adminPhone').value.trim();if(!/^\+?[1-9]\d{7,14}$/.test(phone))return toast('Enter phone with country code, e.g. +91XXXXXXXXXX');try{await aandariAuth('otp',{phone,create_user:true});aandariOtpPhone=phone;document.getElementById('adminOtpStep').style.display='block';toast('OTP sent. Check your SMS.')}catch(e){toast(e.message)}}
 async function verifyAdminOtp(){const token=document.getElementById('adminOtp').value.trim();if(!/^\d{4,8}$/.test(token))return toast('Enter the OTP');try{const j=await aandariAuth('verify',{phone:aandariOtpPhone,token,type:'sms'});aandariSession=j;localStorage.setItem('aandari_auth_session',JSON.stringify(j));const ok=await refreshAdminState();if(!ok){localStorage.removeItem('aandari_auth_session');aandariSession=null;toast('Login successful, but this account is not yet approved as AANDARI admin.');render();return}toast('Admin login successful');render()}catch(e){toast(e.message)}}
@@ -741,7 +764,7 @@ function aandariSaveForLater(id){if(!wish.includes(id))wish.push(id);cart=cart.f
 function qty(id,n){let c=cart.find(x=>x.id===id);if(c&&n>0){let p=products.find(x=>x.id===id);if(p&&Number(p.stock)>0&&c.qty>=Number(p.stock))return toast('Only '+p.stock+' items available');if(p&&Number(p.stock)<=0)return toast('This product is out of stock')}if(c)c.qty+=n;cart=cart.filter(x=>x.qty>0);save();render()}function removeCart(id){cart=cart.filter(x=>x.id!==id);save();render()}function applyCoupon(){const el=document.getElementById('coupon');coupon=(el?.value||'').trim().toUpperCase();if(!coupon)return toast('Enter a coupon code');save();toast('Coupon saved. Final discount will be verified securely when you place the order.')}
 function checkout(){if(!aandariSession?.access_token)return `<h2>Secure Checkout</h2><div class="card"><h3>Login required</h3><p class="muted">Real orders are linked to your customer account. Login with your mobile OTP to continue.</p><input class="field" id="customerOtpPhone" type="tel" placeholder="+91XXXXXXXXXX"><button class="btn" style="margin-top:10px" onclick="sendCustomerOtp()">Send OTP</button><div id="customerOtpStep" style="display:none;margin-top:12px"><input class="field" id="customerOtp" inputmode="numeric" placeholder="Enter SMS OTP"><button class="btn" style="margin-top:10px" onclick="verifyCustomerOtp()">Verify & Continue</button></div></div>`;let total=cart.reduce((s,c)=>{let p=products.find(x=>x.id===c.id);return s+(p?p.price*c.qty:0)},0);let loc=window.aandariCheckoutLocation;return `<h2>Secure Checkout</h2><div class="cards2"><div class="card"><h3>Delivery Address</h3><input class="field" id="cust" placeholder="Full name"><input class="field" id="phone" placeholder="Mobile number" style="margin-top:8px"><textarea class="field" id="addr" placeholder="House no., street, area" style="margin-top:8px"></textarea><input class="field" id="landmark" placeholder="Landmark (optional)" style="margin-top:8px"><div class="row" style="margin-top:8px"><input class="field" id="city" placeholder="City"><input class="field" id="state" placeholder="State"></div><input class="field" id="checkoutPin" placeholder="6-digit PIN code" value="${pin}" style="margin-top:8px"><div class="actions" style="margin-top:10px"><button class="pill" type="button" data-aandari-action="use-gps">📍 Use Current Location</button><button class="pill" type="button" data-aandari-action="open-map">⌖ Choose on Map</button></div><p class="small muted" id="geoStatus" style="margin-top:8px">${loc?'Location selected: '+loc.latitude.toFixed(5)+', '+loc.longitude.toFixed(5):'Choose GPS or select your exact delivery pin on the map.'}</p></div><div class="card"><h3>Payment Method</h3><label><input type="radio" name="pay" value="cod" checked> Cash on Delivery</label><p class="small muted">Online payments will be enabled after payment gateway setup. No online payment will be charged now.</p><hr><div class="between"><span>Product subtotal</span><b>${money(total)}</b></div><div class="between" style="margin-top:8px"><span>Delivery fee</span><b>${total>=1999?"FREE":money(total?99:0)}</b></div><div class="between" style="margin-top:8px"><span>Packing charges</span><b>${money(0)}</b></div><div class="between" style="margin-top:8px"><span>Other charges</span><b>${money(0)}</b></div><div class="between" style="margin-top:12px;font-size:16px"><b>Estimated payable</b><b>${money(total+(total>=1999?0:(total?99:0)))}</b></div><p class="small muted">Delivery estimate: ₹99 below ₹1,999; free at ₹1,999 or above. Packing and other charges are currently ₹0. Final coupon, stock and delivery amount are verified securely by AANDARI server.</p><button class="btn" style="width:100%;margin-top:15px" onclick="placeOrder()">Place Real Order</button></div></div><div class="notice">Your order will be saved to AANDARI database. Payment method: Cash on Delivery.</div>`}
 async function sendCustomerOtp(){const el=document.getElementById('customerOtpPhone');const phone=(el?.value||'').trim();if(!/^\+?[1-9]\d{7,14}$/.test(phone))return toast('Enter mobile number with country code, e.g. +91XXXXXXXXXX');try{await aandariAuth('otp',{phone,create_user:true});aandariCustomerOtpPhone=phone;document.getElementById('customerOtpStep').style.display='block';toast('OTP sent. Check your SMS.')}catch(e){toast(e.message)}}
-async function verifyCustomerOtp(){const token=(document.getElementById('customerOtp')?.value||'').trim();if(!/^\d{4,8}$/.test(token))return toast('Enter the SMS OTP');try{const j=await aandariAuth('verify',{phone:aandariCustomerOtpPhone,token,type:'sms'});aandariSession=j;localStorage.setItem('aandari_auth_session',JSON.stringify(j));await refreshAdminState();toast('Login successful. Complete your delivery address.');render()}catch(e){toast(e.message)}}
+async function verifyCustomerOtp(){const token=(document.getElementById('customerOtp')?.value||'').trim();if(!/^\d{4,8}$/.test(token))return toast('Enter the SMS OTP');try{const j=await aandariAuth('verify',{phone:aandariCustomerOtpPhone,token,type:'sms'});aandariPersistSession(j);await refreshAdminState();toast('Login successful. Complete your delivery address.');render()}catch(e){toast(e.message)}}
 function captureDeliveryLocation(){const status=document.getElementById('geoStatus');if(!window.isSecureContext){const msg='GPS requires HTTPS. Open this preview in Chrome.';if(status)status.textContent=msg;return toast(msg)}if(!navigator.geolocation){const msg='GPS is unavailable in this browser. Open the preview in Chrome and allow Location permission.';if(status)status.textContent=msg;return toast(msg)}if(status)status.textContent='Requesting phone location permission…';navigator.geolocation.getCurrentPosition(pos=>{window.aandariCheckoutLocation={latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy:Math.round(pos.coords.accuracy),captured_at:new Date().toISOString(),source:'gps'};if(status)status.innerHTML='📍 Location selected · accuracy about '+window.aandariCheckoutLocation.accuracy+' m · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q='+pos.coords.latitude+','+pos.coords.longitude+'">View on Map</a>';const sum=document.getElementById('aandariLocationSummary');if(sum)sum.textContent='GPS selected · '+pos.coords.latitude.toFixed(6)+', '+pos.coords.longitude.toFixed(6);aandariUpdateDeliveryAvailability();aandariReverseGeocodeAndFill(window.aandariCheckoutLocation);toast('Delivery location selected; finding address…')},err=>{const msg=err.code===1?'Location permission denied. Android Settings → Apps → Chrome (or AANDARI) → Permissions → Location → Allow while using.':err.code===2?'Phone could not determine location. Turn ON device Location/GPS and try near a window or outdoors.':'Location request timed out. Turn ON device Location/GPS and try again.';if(status)status.textContent=msg;toast(msg)},{enableHighAccuracy:true,timeout:20000,maximumAge:0})}
 async function placeOrder(){if(!cart.length)return toast('Cart is empty');if(!aandariSession?.access_token)return toast('Please login before placing order');const name=document.getElementById('cust')?.value.trim(),phone=document.getElementById('phone')?.value.trim(),addr=document.getElementById('addr')?.value.trim(),city=document.getElementById('city')?.value.trim(),state=document.getElementById('state')?.value.trim(),pincode=document.getElementById('checkoutPin')?.value.trim(),landmark=document.getElementById('landmark')?.value.trim();if(!name||!phone||!addr||!city||!state||!/^\d{6}$/.test(pincode||''))return toast('Fill name, phone, full address, city, state and valid 6-digit PIN');const items=cart.map(x=>({product_id:String(x.id),quantity:Number(x.qty)}));if(items.some(x=>!/^([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(x.product_id)||!Number.isInteger(x.quantity)||x.quantity<1))return toast('Cart contains unavailable demo products. Refresh products and add them again.');const loc=window.aandariCheckoutLocation;const note=loc?'Customer shared GPS location: '+loc.latitude+','+loc.longitude+' (accuracy '+loc.accuracy+'m). Map: https://www.google.com/maps?q='+loc.latitude+','+loc.longitude:null;const btn=document.querySelector('#view button[onclick="placeOrder()"]');if(btn){btn.disabled=true;btn.textContent='Placing order…'}try{const r=await fetch(AANDARI_SUPABASE_URL+'/rest/v1/rpc/create_customer_order',{method:'POST',headers:{...aandariHeaders(),'Content-Type':'application/json'},body:JSON.stringify({p_items:items,p_address:{recipient_name:name,phone,address_line:addr,landmark,city,state,pincode,coupon_code:coupon||null},p_payment_method:'cod',p_delivery_note:note})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.message||data.msg||data.details||'Order could not be placed (HTTP '+r.status+')');window.aandariCheckoutLocation=null;cart=[];coupon='';window.aandariCouponPreview=null;save();toast('Order placed successfully: '+data.order_number);openPage('orders')}catch(e){toast(e.message||'Order failed. Please try again.');if(btn){btn.disabled=false;btn.textContent='Place Real Order'}}}
 async function aandariOrderProgress(status){const steps=['placed','confirmed','processing','shipped','out_for_delivery','delivered'];const labels=['Placed','Confirmed','Processing','Shipped','Out for delivery','Delivered'];const normalized=String(status||'placed').toLowerCase().replace(/[ -]/g,'_');const current=steps.indexOf(normalized);if(normalized==='cancelled')return '<div class="order-cancelled">✕ Order cancelled</div>';const active=Math.max(0,current);return '<div class="order-timeline">'+steps.map((step,k)=>'<div class="order-step '+(k<=active?'done':'')+'"><span>'+(k<active?'✓':k+1)+'</span><small>'+labels[k]+'</small></div>').join('')+'</div><div class="tracking-note">📍 Delivery tracking updates will appear here as your order moves. Live map tracking will be enabled after delivery-partner integration.</div>'}
@@ -762,7 +785,14 @@ function aandariToggleOrderDetails(id){const el=document.getElementById('orderDe
 async function aandariBuyAgain(orderId){try{const r=await fetch(AANDARI_SUPABASE_URL+'/rest/v1/customer_order_items?select=*&order_id=eq.'+encodeURIComponent(orderId),{headers:aandariHeaders()});const rows=await r.json();if(!r.ok)throw new Error(rows.message||'Could not load order items');let added=0;for(const item of rows||[]){const id=item.product_id||item.productId;const p=products.find(x=>String(x.id)===String(id));if(!p||Number(p.stock)<=0)continue;const q=Math.max(1,Number(item.quantity||item.qty||item.count||1));const existing=cart.find(x=>String(x.id)===String(p.id));if(existing)existing.qty=Math.min(Number(p.stock),existing.qty+q);else cart.push({id:p.id,qty:Math.min(Number(p.stock),q)});added++}save();if(!added)return toast('Items are unavailable or could not be matched to current catalogue');toast(added+' product(s) added to cart');openPage('cart')}catch(e){toast(e.message||'Buy Again is temporarily unavailable')}}
 function aandariRequestCancel(orderId){toast('To request cancellation, contact AANDARI support with order '+orderId);openPage('support')}
 async function loadCustomerOrders(){const host=document.getElementById('customerOrderList');if(!host||!aandariSession?.access_token)return;host.innerHTML='<div class="orders-loading">Loading your orders…</div>';try{const r=await fetch(AANDARI_SUPABASE_URL+'/rest/v1/customer_orders?select=*&order=created_at.desc&limit=50',{headers:aandariHeaders()});const rows=await r.json();if(!r.ok)throw new Error(rows.message||'Could not load orders');aandariCustomerOrders=Array.isArray(rows)?rows:[];aandariRenderCustomerOrders()}catch(e){host.innerHTML='<div class="orders-empty"><h3>Could not load orders</h3><p class="muted">'+aandariEscapeHtml(e.message||'Please try again')+'</p><button class="pill" onclick="loadCustomerOrders()">Try again</button></div>'}}
-function ordersPage(){if(!aandariSession?.access_token)return '<section class="orders-login-premium"><div>🔐</div><h2>Sign in to view orders</h2><p class="muted">Your purchases, invoices and delivery updates will be available here after login.</p><button class="btn" onclick="openPage(\'checkout\')">Continue to Login</button></section>';setTimeout(loadCustomerOrders,0);return '<div id="customerOrderList"><div class="orders-loading">Loading your orders…</div></div>'}
+function ordersPage(){
+  if(!aandariSession?.access_token){
+    setTimeout(async()=>{const ok=await aandariEnsureSession();if(page!=='orders')return;if(ok)render();else{const host=document.getElementById('view');if(host)host.innerHTML='<section class="orders-login-premium"><div>🔐</div><h2>Sign in to view orders</h2><p class="muted">Your orders are securely linked to your mobile account. Please sign in to continue.</p><button class="btn" onclick="openPage(\\'checkout\\')">Continue to Login</button></section>'}},0);
+    return '<div class="orders-loading">Restoring your account…</div>';
+  }
+  setTimeout(async()=>{if(await aandariEnsureSession())loadCustomerOrders();else if(page==='orders')render()},0);
+  return '<div id="customerOrderList"><div class="orders-loading">Loading your orders…</div></div>';
+}
 let aandariCloudAddresses=[];
 function aandariAddressEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let aandariLocalAddresses=[];
@@ -862,42 +892,30 @@ function aandariShowAuthMode(mode){
 }
 function aandariToggleSignup(){return}
 async function aandariEmailSubmit(){return aandariSendCustomerOtp()}
-async function aandariSendCustomerOtp(){
-  const field=document.getElementById('aandariPhone');
-  const raw=String(field?.value||'').replace(/\D/g,'').trim();
-  if(!/^[6-9]\d{9}$/.test(raw))return aandariAuthMessage('Enter a valid 10-digit Indian mobile number.');
+async async function aandariSendCustomerOtp(){
+  const field=document.getElementById('aandariPhone'),raw=String(field?.value||'').replace(/\\D/g,'').trim();
+  if(!/^[6-9]\\d{9}$/.test(raw))return aandariAuthMessage('Enter a valid 10-digit Indian mobile number.');
   aandariCustomerOtpPhone='+91'+raw;
-  const btn=document.getElementById('aandariSendOtpBtn');
-  const otp=document.getElementById('aandariPhoneOtp');
-  const sub=document.getElementById('aandariAuthFormSub');
+  const btn=document.getElementById('aandariSendOtpBtn'),otp=document.getElementById('aandariPhoneOtp'),sub=document.getElementById('aandariAuthFormSub');
   if(!btn||!otp||!sub)return aandariAuthMessage('Login form is not ready. Please refresh.');
-  otp.style.display='block';otp.value='';otp.focus();
-  sub.textContent='Demo mode: enter the test OTP shown below.';
-  btn.textContent='Verify Demo OTP';btn.disabled=false;btn.onclick=aandariVerifyCustomerOtp;
-  aandariAuthMessage('DEMO MODE ONLY — No SMS was sent. Test OTP: 123456. Your phone number is not verified.');
+  btn.disabled=true;btn.textContent='Sending OTP…';
+  try{await aandariAuth('otp',{phone:aandariCustomerOtpPhone,create_user:true});otp.style.display='block';otp.value='';otp.focus();sub.textContent='Enter the SMS OTP sent to '+aandariCustomerOtpPhone+'.';btn.textContent='Verify OTP';btn.disabled=false;btn.onclick=aandariVerifyCustomerOtp;aandariAuthMessage('OTP sent successfully. Check your SMS messages.')}
+  catch(e){btn.disabled=false;btn.textContent='Send OTP';aandariAuthMessage(e.message||'Could not send OTP. Please try again.')}
   return false;
 }
 async function aandariVerifyCustomerOtp(ev){
-  if(ev){ev.preventDefault();ev.stopPropagation();}
-  const otp=document.getElementById('aandariPhoneOtp');
-  const token=String(otp?.value||'').trim();
-  if(token!=='123456'){aandariAuthMessage('Incorrect demo OTP. For testing, enter 123456.');otp?.focus();return false;}
-  const raw=String(document.getElementById('aandariPhone')?.value||'').replace(/\D/g,'');
-  const phone=aandariCustomerOtpPhone||('+91'+raw);
-  if(!/^\+91[6-9]\d{9}$/.test(phone)){aandariAuthMessage('Mobile number is missing. Please go back and enter it again.');return false;}
+  if(ev){ev.preventDefault();ev.stopPropagation()}
+  const otp=document.getElementById('aandariPhoneOtp'),token=String(otp?.value||'').trim();
+  if(!/^\\d{4,8}$/.test(token)){aandariAuthMessage('Enter the OTP received by SMS.');otp?.focus();return false}
+  const raw=String(document.getElementById('aandariPhone')?.value||'').replace(/\\D/g,''),phone=aandariCustomerOtpPhone||('+91'+raw);
+  if(!/^\\+91[6-9]\\d{9}$/.test(phone)){aandariAuthMessage('Mobile number is missing. Please enter it again.');return false}
+  const btn=document.getElementById('aandariSendOtpBtn');if(btn){btn.disabled=true;btn.textContent='Verifying…'}
   try{
-    aandariShowProfileCompletion(phone);
-    try{
-      localStorage.setItem('aandari_demo_customer',JSON.stringify({phone,mode:'demo',verified:false,profile_completed:false,created_at:new Date().toISOString()}));
-      localStorage.removeItem('aandari_guest_mode');
-      localStorage.removeItem('aandari_auth_session');
-      localStorage.removeItem('aandari_customer_session');
-    }catch(storageError){console.warn('AANDARI demo session could not be persisted',storageError);}
-    if(typeof toast==='function')toast('Demo OTP accepted. No SMS was sent and the number is not verified.');
-  }catch(error){
-    console.error('AANDARI profile screen error',error);
-    aandariAuthMessage('Could not open profile setup. Please refresh and try again.');
-  }
+    const session=await aandariAuth('verify',{phone,token,type:'sms'});
+    if(!session?.access_token)throw new Error('OTP verified but login session was not returned. Please try again.');
+    aandariPersistSession(session);try{localStorage.removeItem('aandari_demo_customer');localStorage.removeItem('aandari_guest_mode')}catch(e){}
+    aandariShowProfileCompletion(phone);if(typeof toast==='function')toast('Mobile number verified. Complete your profile.');
+  }catch(error){if(btn){btn.disabled=false;btn.textContent='Verify OTP'}console.error('AANDARI OTP verification failed',error);aandariAuthMessage(error.message||'OTP verification failed. Please try again.')}
   return false;
 }
 function aandariUnlockStore(){
@@ -946,8 +964,14 @@ function aandariCompleteProfile(){
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){if(err){err.textContent='Please enter a valid email address or leave it blank.';err.style.display='block';}return;}
   const profile={name,email,phone,dob,gender,completed:true,updated_at:new Date().toISOString()};
   try{
-    localStorage.setItem('aandari_profile_v1_demo_'+phone.replace(/\D/g,''),JSON.stringify(profile));
-    localStorage.setItem('aandari_demo_customer',JSON.stringify({phone,mode:'demo',verified:false,profile_completed:true,created_at:new Date().toISOString()}));
+    if(aandariSession?.access_token){
+      apWrite({...profile,phone});
+      localStorage.setItem('aandari_demo_customer',JSON.stringify({phone,mode:'signed_in',verified:true,profile_completed:true,created_at:new Date().toISOString()}));
+      fetch(AANDARI_SUPABASE_URL+'/auth/v1/user',{method:'PUT',headers:aandariHeaders(),body:JSON.stringify({data:{...(aandariSession.user?.user_metadata||{}),full_name:name,email,dob,gender}})}).then(async r=>{const u=await r.json().catch(()=>({}));if(r.ok&&u.id){aandariSession.user=u;aandariPersistSession(aandariSession)}else if(!r.ok)console.warn('AANDARI profile sync failed',u)}).catch(e=>console.warn('AANDARI profile sync failed',e));
+    }else{
+      localStorage.setItem('aandari_profile_v1_demo_'+phone.replace(/\\D/g,''),JSON.stringify(profile));
+      localStorage.setItem('aandari_demo_customer',JSON.stringify({phone,mode:'demo',verified:false,profile_completed:true,created_at:new Date().toISOString()}));
+    }
     localStorage.removeItem('aandari_guest_mode');
   }catch(storageError){
     console.error('AANDARI profile save failed',storageError);
@@ -1235,45 +1259,10 @@ window.openPage=function(p){
 
 </script>
 <script>
-/* Final, self-contained demo OTP handler: runs after all auth scripts. */
+/* Bind the customer login button to the Supabase SMS OTP flow. */
 (function(){
-  function bindAandariDemoOtp(){
-    var btn=document.getElementById('aandariSendOtpBtn');
-    if(!btn || btn.dataset.demoOtpBound==='1') return;
-    btn.dataset.demoOtpBound='1';
-    btn.onclick=function(ev){
-      if(ev){ev.preventDefault();ev.stopPropagation();}
-      var phone=document.getElementById('aandariPhone');
-      var otp=document.getElementById('aandariPhoneOtp');
-      var sub=document.getElementById('aandariAuthFormSub');
-      var err=document.getElementById('aandariAuthError');
-      function message(t){if(err){err.textContent=t;err.style.display='block';}}
-      if(!phone || !otp){message('Login form is not ready. Please refresh.');return false;}
-      if(btn.dataset.demoOtpStep!=='verify'){
-        var number=String(phone.value||'').replace(/\D/g,'');
-        if(!/^[6-9]\d{9}$/.test(number)){message('Please enter a valid 10-digit Indian mobile number.');phone.focus();return false;}
-        btn.dataset.demoOtpPhone=number;
-        btn.dataset.demoOtpStep='verify';
-        otp.style.display='block';
-        otp.value='';
-        otp.placeholder='Enter demo OTP 123456';
-        otp.setAttribute('inputmode','numeric');
-        if(sub)sub.textContent='Enter the 6-digit demo OTP to continue.';
-        btn.textContent='Verify OTP';
-        message('TEST MODE: No SMS was sent. Enter 123456 to continue. Your number is not verified.');
-        otp.focus();
-        return false;
-      }
-      if(String(otp.value||'').trim()!=='123456'){message('Incorrect OTP. For testing, enter 123456.');otp.focus();return false;}
-      window.aandariCustomerOtpPhone='+91'+btn.dataset.demoOtpPhone;
-      if(typeof window.aandariVerifyCustomerOtp==='function'){window.aandariVerifyCustomerOtp();return false;}
-      message('OTP verification is not ready. Please refresh and try again.');
-      return false;
-    };
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindAandariDemoOtp);
-  else bindAandariDemoOtp();
-  setTimeout(bindAandariDemoOtp,500);
+  function bindAandariCustomerOtp(){var btn=document.getElementById('aandariSendOtpBtn');if(!btn)return;btn.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation()}return window.aandariSendCustomerOtp?window.aandariSendCustomerOtp():false}}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindAandariCustomerOtp);else bindAandariCustomerOtp();setTimeout(bindAandariCustomerOtp,500);
 })();
 </script>
 <script>
