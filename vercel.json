@@ -1,7 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "mkdir -p dist && cp index.html dist/index.html && cp manifest.webmanifest dist/manifest.webmanifest && cp sw.js dist/sw.js",
-  "outputDirectory": "dist",
+  "outputDirectory": ".",
   "headers": [
     {
       "source": "/index.html",
