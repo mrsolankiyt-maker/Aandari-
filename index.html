@@ -809,4 +809,53 @@ const aandariOldRender=render;
 render=function(){aandariOldRender();if(page==='account')setTimeout(apLoadSummary,0)};
 const aandariOldOpenPage=openPage;
 openPage=function(p){if(p==='ap-addresses'){page=p;document.getElementById('side').innerHTML=nav.map(n=>'<button class="navbtn" onclick="openPage(\''+n[0]+'\')"><span>'+n[1]+'</span>'+t(n[2])+'</button>').join('');document.getElementById('view').innerHTML=apAddressPage();document.getElementById('mobile').innerHTML='';window.scrollTo({top:0,behavior:'smooth'});return}if(p==='ap-notifications'){page=p;document.getElementById('view').innerHTML=apNotificationsPage();window.scrollTo({top:0,behavior:'smooth'});return}aandariOldOpenPage(p)};
+
+/* AANDARI customer onboarding repair — demo OTP and complete personal profile */
+(function(){
+ const st=document.createElement('style');
+ st.textContent='.aandari-profile-onboard{position:fixed;inset:0;z-index:1000;background:#fff;overflow:auto;padding:22px 16px calc(26px + env(safe-area-inset-bottom))}.aandari-profile-wrap{max-width:560px;margin:0 auto;min-height:calc(100dvh - 48px);display:flex;flex-direction:column;justify-content:center}.aandari-profile-wrap h2{font-size:26px;margin:8px 0}.aandari-profile-wrap .sub{color:#777;margin:0 0 22px;line-height:1.5}.aandari-profile-form{border:1px solid #eee;border-radius:20px;padding:18px;box-shadow:0 12px 34px #0000000a}.aandari-profile-form label{display:block;font-size:12px;font-weight:750;color:#555;margin:13px 0 6px}.aandari-profile-form input,.aandari-profile-form select{width:100%;height:48px;border:1px solid #e8e4e0;border-radius:11px;padding:0 12px;font:inherit;background:#fff}.aandari-profile-form .btn{width:100%;margin-top:18px}.aandari-profile-form .hint{font-size:11px;color:#888;margin-top:12px;line-height:1.5}.ap-personal-card{border:1px solid #eee;border-radius:16px;padding:16px;margin:14px 0;background:#fff}.ap-personal-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px 10px}.ap-personal-grid small{display:block;color:#888;font-size:11px;margin-bottom:4px}.ap-personal-grid b{font-size:13px;overflow-wrap:anywhere}';
+ document.head.appendChild(st);
+})();
+let aandariDemoPhone='';
+function aandariSendCustomerOtp(){
+ const raw=(document.getElementById('aandariPhone')?.value||'').trim(),digits=raw.replace(/\D/g,'');
+ if(!/^\d{10}$/.test(digits)&&!/^91\d{10}$/.test(digits))return aandariAuthMessage('Enter a valid 10-digit Indian mobile number.');
+ aandariDemoPhone=digits.length===12?'+'+digits:'+91'+digits;
+ const otp=document.getElementById('aandariPhoneOtp'),btn=document.getElementById('aandariSendOtpBtn');
+ if(otp){otp.style.display='block';otp.value='';otp.placeholder='Enter demo OTP 123456';otp.setAttribute('maxlength','6')}
+ if(btn){btn.textContent='Verify OTP';btn.onclick=aandariVerifyCustomerOtp}
+ aandariAuthMessage('Demo OTP generated. Enter 123456 to continue. SMS is not connected in this preview.');
+}
+function aandariVerifyCustomerOtp(){
+ const token=(document.getElementById('aandariPhoneOtp')?.value||'').trim();
+ if(token!=='123456')return aandariAuthMessage('Incorrect OTP. For this preview, enter 123456.');
+ const id='demo_'+aandariDemoPhone.replace(/\D/g,'');
+ aandariSession={user:{id:id,phone:aandariDemoPhone,user_metadata:{}}};
+ localStorage.setItem('aandari_auth_session',JSON.stringify(aandariSession));
+ localStorage.setItem('aandari_customer_session',JSON.stringify(aandariSession));
+ localStorage.setItem('aandari_guest_mode','0');
+ aandariUnlockStore();aandariOpenCustomerProfile(true);
+}
+function aandariEnterGuest(){localStorage.setItem('aandari_guest_mode','1');aandariUnlockStore();openPage('home')}
+function aandariOpenCustomerProfile(first){
+ const d=apRead(),phone=aandariSession?.user?.phone||aandariDemoPhone||'',root=document.getElementById('modal');
+ if(!root)return;
+ root.innerHTML='<div class="aandari-profile-onboard"><div class="aandari-profile-wrap"><div style="color:#e87513;font-weight:900;letter-spacing:2px;font-size:12px">AANDARI · PERSONAL PROFILE</div><h2>'+(first?'Complete your profile':'Personal Information')+'</h2><p class="sub">'+(first?'Add your details to continue to the AANDARI home screen.':'Update your saved customer details.')+'</p><div class="aandari-profile-form"><label for="apOnName">Full Name *</label><input id="apOnName" maxlength="60" autocomplete="name" placeholder="Enter your full name" value="'+aandariEscapeHtml(d.name||'')+'"><label for="apOnPhone">Mobile Number</label><input id="apOnPhone" value="'+aandariEscapeHtml(phone)+'" readonly><label for="apOnEmail">Email Address (optional)</label><input id="apOnEmail" type="email" maxlength="120" autocomplete="email" placeholder="Enter your email" value="'+aandariEscapeHtml(d.email||'')+'"><label for="apOnDob">Date of Birth (optional)</label><input id="apOnDob" type="date" value="'+aandariEscapeHtml(d.dob||'')+'"><label for="apOnGender">Gender (optional)</label><select id="apOnGender"><option value="">Select gender</option><option value="Male" '+(d.gender==='Male'?'selected':'')+'>Male</option><option value="Female" '+(d.gender==='Female'?'selected':'')+'>Female</option></select><button class="btn" type="button" onclick="aandariSaveCustomerProfile('+(first?'true':'false')+')">Save Profile & Continue</button><div class="hint">Your details are saved on this device in this demo preview. Real SMS OTP and cloud profile sync are not connected.</div></div></div></div>';
+}
+function aandariSaveCustomerProfile(first){
+ const name=(document.getElementById('apOnName')?.value||'').trim(),email=(document.getElementById('apOnEmail')?.value||'').trim(),dob=document.getElementById('apOnDob')?.value||'',gender=document.getElementById('apOnGender')?.value||'';
+ if(name.length<2)return toast('Please enter your full name.');
+ if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return toast('Please enter a valid email address.');
+ apWrite({...apRead(),name:name,email:email,dob:dob,gender:gender,phone:aandariSession?.user?.phone||aandariDemoPhone});
+ if(aandariSession?.user){aandariSession.user.user_metadata={...(aandariSession.user.user_metadata||{}),full_name:name};localStorage.setItem('aandari_auth_session',JSON.stringify(aandariSession));localStorage.setItem('aandari_customer_session',JSON.stringify(aandariSession))}
+ const root=document.getElementById('modal');if(root)root.innerHTML='';
+ if(first){openPage('home');toast('Profile saved. Welcome to AANDARI!')}else{openPage('account');toast('Personal information updated.')}
+}
+function apOpenEdit(){aandariOpenCustomerProfile(false)}
+function apSaveProfile(){aandariSaveCustomerProfile(false)}
+function account(){
+ const d=apRead(),u=aandariSession?.user||{},name=d.name||u.user_metadata?.full_name||'AANDARI Customer',phone=d.phone||u.phone||'Not added',email=d.email||u.email||'Not added',dob=d.dob||'Not added',gender=d.gender||'Not added',esc=aandariEscapeHtml;
+ return '<section class="account-hero"><div class="account-avatar">'+esc(apInitials(name))+'</div><div><span class="eyebrow">AANDARI CUSTOMER</span><h2>My Account</h2><p>'+esc(name)+'</p></div></section><div class="ap-personal-card"><div class="between"><h3 style="margin:0">Personal Information</h3><button class="pill" onclick="apOpenEdit()">Edit</button></div><div class="ap-personal-grid" style="margin-top:16px"><div><small>Full Name</small><b>'+esc(name)+'</b></div><div><small>Mobile Number</small><b>'+esc(phone)+'</b></div><div><small>Email Address</small><b>'+esc(email)+'</b></div><div><small>Date of Birth</small><b>'+esc(dob)+'</b></div><div><small>Gender</small><b>'+esc(gender)+'</b></div></div></div><div class="account-shortcuts"><button onclick="openPage(\\'orders\\')"><b>▤</b><span>My Orders</span><small>Track purchases</small></button><button onclick="openPage(\\'wishlist\\')"><b>♡</b><span>Wishlist</span><small>Saved products</small></button><button onclick="openPage(\\'delivery\\')"><b>⌖</b><span>Addresses</span><small>Delivery PIN</small></button></div><div class="sectionhead"><h3>Account & Support</h3></div><div class="account-menu">'+[['📍','Delivery PIN','delivery'],['⇄','Compare','compare'],['🎁','Rewards','rewards'],['↩','Returns','returns'],['🎟️','Coupons & Offers','offers'],['💬','Help & Support','support']].map(x=>'<button onclick="openPage(\\''+x[2]+'\\')"><span>'+x[0]+'</span><b>'+x[1]+'</b><i>›</i></button>').join('')+'</div><button class="pill signout-btn" onclick="aandariSession=null;localStorage.removeItem(\\'aandari_auth_session\\');localStorage.removeItem(\\'aandari_customer_session\\');localStorage.removeItem(\\'aandari_guest_mode\\');aandariShowAuthMode(\\'main\\');document.getElementById(\\'aandariAuthScreen\\').classList.add(\\'show\\')">Sign out</button>';
+}
+
 </script></body></html>
