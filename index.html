@@ -518,8 +518,26 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
     field.value='';field.disabled=false;field.removeAttribute('readonly');otp.value='';otp.style.display='none';send.textContent='Send OTP';send.disabled=false;send.onclick=function(){aandariSendCustomerOtp();};
     setTimeout(function(){field.focus();},100);
   });}
-  /* Reliable mobile login taps: capture taps before any nested handlers or overlays. */
+  /* Reliable touch + mouse controls for the login form. */
+  var aandariLastAuthPointerAction=0;
+  function aandariHandleAuthTap(target){
+    var back=target&&target.closest?target.closest('#aandariAuthForm .aandari-auth-skip'):null;
+    var send=target&&target.closest?target.closest('#aandariSendOtpBtn'):null;
+    var login=target&&target.closest?target.closest('#aandariPhoneLoginStart'):null;
+    if(back){aandariShowAuthMode('main');return true;}
+    if(send){if(typeof window.aandariSendCustomerOtp==='function')window.aandariSendCustomerOtp();return true;}
+    if(login){aandariShowAuthMode('phone');return true;}
+    return false;
+  }
+  document.addEventListener('pointerup',function(ev){
+    if(aandariHandleAuthTap(ev.target)){
+      aandariLastAuthPointerAction=Date.now();
+      ev.preventDefault();ev.stopImmediatePropagation();
+    }
+  },true);
   document.addEventListener('click',function(ev){
+    if(Date.now()-aandariLastAuthPointerAction<700){ev.preventDefault();ev.stopImmediatePropagation();return;}
+
     var login=ev.target&&ev.target.closest?ev.target.closest('#aandariPhoneLoginStart'):null;
     var send=ev.target&&ev.target.closest?ev.target.closest('#aandariSendOtpBtn'):null;
     if(login){
