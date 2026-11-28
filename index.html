@@ -808,9 +808,9 @@ function aandariShowAuthMode(mode){
 function aandariToggleSignup(){return}
 async function aandariEmailSubmit(){return aandariSendCustomerOtp()}
 async function aandariSendCustomerOtp(){
-  const field=document.getElementById('aandariPhone'),raw=field.value.trim().replace(/[\\s()-]/g,'');
-  const phone=/^\\d{10}$/.test(raw)?'+91'+raw:raw;
-  if(!/^\\+[1-9]\\d{7,14}$/.test(phone))return aandariAuthMessage('Enter a valid 10-digit Indian mobile number.');
+  const field=document.getElementById('aandariPhone'),raw=String(field.value||'').replace(/[\s()-]/g,'').trim();
+  const phone=/^\d{10}$/.test(raw)?'+91'+raw:raw;
+  if(!/^\+91[6-9]\d{9}$/.test(phone))return aandariAuthMessage('Enter a valid 10-digit Indian mobile number.');
   const btn=document.getElementById('aandariSendOtpBtn');btn.disabled=true;btn.textContent='Sending…';
   try{
     const j=await aandariAuth('otp',{phone,create_user:true});
