@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<rect width="1024" height="1024" fill="#ffffff"/>
+<g fill="#050505" font-family="Arial, Helvetica, sans-serif" text-anchor="middle">
+<text x="500" y="510" font-size="220" font-weight="500" letter-spacing="-15">aandari</text>
+<path d="M873 226 L892 170 L911 226 L967 245 L911 264 L892 320 L873 264 L817 245 Z"/>
+<text x="975" y="204" font-size="38" font-weight="700">®</text>
+<text x="512" y="620" font-size="35" font-weight="600" letter-spacing="8">HARDWARE <tspan fill="#f47700">•</tspan> SANITARYWARE <tspan fill="#f47700">•</tspan> PLYWOOD</text>
+</g>
+<g stroke="#050505" stroke-width="5"><path d="M90 608 H250"/><path d="M774 608 H934"/></g>
+</svg>
