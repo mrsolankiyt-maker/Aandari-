@@ -465,7 +465,7 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
       <p class="aandari-auth-sub">Discover quality products and enjoy a better shopping experience.</p><div class="aandari-auth-showcase" aria-label="AANDARI product categories"><div class="aandari-auth-products"><div class="aandari-auth-product"><span>🚿</span><small>SANITARYWARE</small></div><div class="aandari-auth-product"><span>🔧</span><small>HARDWARE</small></div><div class="aandari-auth-product"><span>🎨</span><small>PAINTS</small></div></div></div>
       <button class="aandari-auth-btn" onclick="aandariGoogleLogin()"><span class="aandari-auth-google-icon">G</span> Continue with Google</button>
       <div class="aandari-auth-divider">OR CONTINUE WITH</div>
-      <button class="aandari-auth-btn primary" id="aandariPhoneLoginStart" type="button">Get Started with Mobile Number</button>
+      <button class="aandari-auth-btn primary" id="aandariPhoneLoginStart" type="button" onclick="aandariShowAuthMode('phone')" style="position:relative;z-index:3;pointer-events:auto;touch-action:manipulation">Get Started with Mobile Number</button>
       <button class="aandari-auth-btn dark" onclick="aandariShowAuthMode('email')">Login / Create Account with Email</button>
       <button class="aandari-auth-skip" onclick="aandariEnterGuest()">Continue as Guest</button>
       <p class="aandari-auth-foot">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
@@ -795,6 +795,7 @@ let aandariAuthMode='main',aandariSignup=false,aandariCustomerOtpPhone='';
 function aandariAuthMessage(msg){const el=document.getElementById('aandariAuthError');if(el){el.textContent=msg;el.style.display='block'}}
 function aandariShowAuthMode(mode){
   if(mode==='email')mode='phone';
+  if(!document.getElementById('aandariAuthMain')||!document.getElementById('aandariAuthForm')){aandariAuthMessage('Login screen is still loading. Please try again.');return;}
   aandariAuthMode=mode;
   const main=document.getElementById('aandariAuthMain'),form=document.getElementById('aandariAuthForm'),email=document.getElementById('aandariEmailFields'),phone=document.getElementById('aandariPhoneFields'),submit=document.getElementById('aandariEmailSubmit'),sw=document.getElementById('aandariEmailSwitch'),err=document.getElementById('aandariAuthError');
   if(err){err.style.display='none';err.textContent=''}
@@ -803,7 +804,7 @@ function aandariShowAuthMode(mode){
   document.getElementById('aandariAuthFormTitle').textContent='Login with Mobile Number';
   document.getElementById('aandariAuthFormSub').textContent='Enter your 10-digit mobile number. We will send a one-time password if free SMS authentication is available.';
   const phoneInput=document.getElementById('aandariPhone');phoneInput.value='';phoneInput.removeAttribute('readonly');phoneInput.disabled=false;setTimeout(()=>phoneInput.focus(),120);const otp=document.getElementById('aandariPhoneOtp');otp.style.display='none';otp.value='';
-  const send=document.getElementById('aandariSendOtpBtn');send.textContent='Send OTP';send.onclick=aandariSendCustomerOtp;send.disabled=false;
+  const send=document.getElementById('aandariSendOtpBtn');send.textContent='Send OTP';send.onclick=function(){aandariSendCustomerOtp()};send.disabled=false;send.style.pointerEvents='auto';send.style.position='relative';send.style.zIndex='3';
 }
 function aandariToggleSignup(){return}
 async function aandariEmailSubmit(){return aandariSendCustomerOtp()}
