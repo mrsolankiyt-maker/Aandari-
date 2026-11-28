@@ -647,23 +647,24 @@ function aandariReadSavedSession(){
 async function aandariEnsureSession(){
   if(aandariSessionRefreshPromise)return aandariSessionRefreshPromise;
   aandariSessionRefreshPromise=(async()=>{
-    const saved=aandariReadSavedSession();
-    if(!saved?.access_token)return false;
-    const expiry=Number(saved.expires_at||0)*1000;
-    if(!expiry||expiry>Date.now()+120000)return true;
-    if(!saved.refresh_token){
-      console.warn('AANDARI session has no refresh token; retaining saved login until explicit sign out.');
-      return true;
-    }
     try{
-      const r=await fetch(AANDARI_SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:AANDARI_SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:saved.refresh_token})});
-      const j=await r.json().catch(()=>({}));
-      if(!r.ok||!j.access_token)throw new Error(j.msg||j.message||j.error_description||'Session refresh temporarily unavailable');
-      aandariPersistSession(j);
-      return true;
-    }catch(e){
-      console.warn('AANDARI token refresh deferred; keeping saved session:',e);
-      aandariSession=saved;
+      const saved=aandariReadSavedSession();
+      if(!saved?.access_token)return false;
+      const expiry=Number(saved.expires_at||0)*1000;
+      if(!expiry||expiry>Date.now()+120000)return true;
+      if(!saved.refresh_token){
+        console.warn('AANDARI saved session has no refresh token; keeping the current login.');
+        return true;
+      }
+      try{
+        const r=await fetch(AANDARI_SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:AANDARI_SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:saved.refresh_token})});
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok||!j.access_token)throw new Error(j.msg||j.message||j.error_description||'Session refresh temporarily unavailable');
+        aandariPersistSession(j);
+      }catch(e){
+        console.warn('AANDARI token refresh deferred; keeping saved login:',e);
+        aandariSession=saved;
+      }
       return true;
     }finally{aandariSessionRefreshPromise=null}
   })();
