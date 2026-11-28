@@ -1315,32 +1315,53 @@ window.openPage=function(p){
 
 </script>
 <script>
-/* Bind the customer login button to the Supabase SMS OTP flow. */
+/* AANDARI demo OTP mode: no SMS provider required. */
 (function(){
-  function bindAandariCustomerOtp(){var btn=document.getElementById('aandariSendOtpBtn');if(!btn)return;btn.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation()}return window.aandariSendCustomerOtp?window.aandariSendCustomerOtp():false}}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindAandariCustomerOtp);else bindAandariCustomerOtp();setTimeout(bindAandariCustomerOtp,500);
-})();
-</script>
-<script>
-/* Keep the verified Supabase SMS OTP and cloud profile handlers.
-   The previous trailing script replaced these with an unverified demo OTP (123456). */
-window.aandariEnterGuest=aandariEnterGuest;
-window.aandariShowProfileCompletion=aandariShowProfileCompletion;
-window.aandariCompleteProfile=aandariCompleteProfile;
-window.aandariSendCustomerOtp=aandariSendCustomerOtp;
-window.aandariVerifyCustomerOtp=aandariVerifyCustomerOtp;
-(function(){
-  function bindAandariCustomerOtp(){
-    var btn=document.getElementById('aandariSendOtpBtn');
-    if(!btn)return;
-    btn.onclick=function(ev){
-      if(ev){ev.preventDefault();ev.stopPropagation()}
-      return window.aandariSendCustomerOtp();
-    };
+  function message(text){
+    var e=document.getElementById('aandariAuthError');
+    if(e){e.textContent=text;e.style.display='block';}
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindAandariCustomerOtp);
-  else bindAandariCustomerOtp();
-  setTimeout(bindAandariCustomerOtp,500);
+  function sendDemoOtp(ev){
+    if(ev){ev.preventDefault();ev.stopPropagation();}
+    var phone=document.getElementById('aandariPhone');
+    var otp=document.getElementById('aandariPhoneOtp');
+    var btn=document.getElementById('aandariSendOtpBtn');
+    var sub=document.getElementById('aandariAuthFormSub');
+    var number=String(phone&&phone.value||'').replace(/\\D/g,'');
+    if(!/^[6-9]\\d{9}$/.test(number)){message('Enter a valid 10-digit Indian mobile number.');return false;}
+    window.aandariCustomerOtpPhone='+91'+number;
+    if(otp){otp.style.display='block';otp.value='';otp.focus();}
+    if(sub)sub.textContent='Demo mode: enter test OTP 123456 to continue.';
+    message('DEMO MODE ONLY — No SMS was sent. Test OTP: 123456. Your phone number is not verified.');
+    if(btn){btn.textContent='Verify Demo OTP';btn.disabled=false;btn.onclick=verifyDemoOtp;}
+    return false;
+  }
+  function verifyDemoOtp(ev){
+    if(ev){ev.preventDefault();ev.stopPropagation();}
+    var otp=document.getElementById('aandariPhoneOtp');
+    var token=String(otp&&otp.value||'').trim();
+    var btn=document.getElementById('aandariSendOtpBtn');
+    if(token!=='123456'){message('Incorrect demo OTP. Please enter 123456.');if(otp)otp.focus();return false;}
+    var phone=window.aandariCustomerOtpPhone||('+91'+String(document.getElementById('aandariPhone')?.value||'').replace(/\\D/g,''));
+    if(btn){btn.disabled=true;btn.textContent='Verified';}
+    var err=document.getElementById('aandariAuthError');if(err){err.textContent='Demo OTP verified. This number is not verified by SMS.';err.style.display='block';}
+    if(typeof window.aandariShowProfileCompletion==='function'){
+      window.aandariShowProfileCompletion(phone);
+    }else{
+      if(btn){btn.disabled=false;btn.textContent='Verify Demo OTP';}
+      message('Profile setup could not load. Please refresh and try again.');
+    }
+    return false;
+  }
+  window.aandariSendCustomerOtp=sendDemoOtp;
+  window.aandariVerifyCustomerOtp=verifyDemoOtp;
+  function bind(){
+    var btn=document.getElementById('aandariSendOtpBtn');
+    if(btn)btn.onclick=sendDemoOtp;
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);
+  else bind();
+  setTimeout(bind,500);
 })();
 </script>
 </body></html>
